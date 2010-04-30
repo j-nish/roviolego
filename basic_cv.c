@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 	// Create an image for the output
 	IplImage* img2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
 	IplImage* dst = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
-	IplImage* dst2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
+	IplImage* temp = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
 
 	//copy from img to img2
 	cvCopy(img, img2, NULL);
@@ -98,7 +98,6 @@ int main(int argc, char *argv[]) {
 	//threshold the dst image
 	cvThreshold(img2, dst, 50.0, 255, CV_THRESH_BINARY);
 	
-	cvShowImage("image", dst);
 
 	//after segmenting, allow only the "all 3 channels at 255" to remain
 	for (y=0; y<height; y++) {
@@ -110,8 +109,23 @@ int main(int argc, char *argv[]) {
 				data[3*x+2] = 255;
 				data[3*x+3] = 255;
 			}
+
+			if(y<height/2) {
+				data[3*x+1] = 255;	
+				data[3*x+2] = 255;
+				data[3*x+3] = 255;
+			}
+
 		}
 	}
+	
+	//make a convolution kernel
+	IplConvKernel* kern = cvCreateStructuringElementEx(6,6,3,3,CV_SHAPE_ELLIPSE);
+	cvShowImage("image", dst);
+
+	//apply morphological opening
+	cvMorphologyEx(dst,dst,temp, kern, CV_MOP_CLOSE);
+
 
 	//convert to greyscale (1channel)
 	//cvCvtColor(dst, dst2, CV_RGB2GRAY);
