@@ -1,6 +1,8 @@
-// basic_cv <image>
-//this program takes in an image img, then does background subtraction
-//with a red background, then saves and outputs the image
+//header file for lego detection opencv program.
+int divide(int a, int b) {
+	return a/b;
+}
+
 #ifdef _CH_
 #pragma package <opencv>
 #endif
@@ -10,31 +12,25 @@
 #include <cv.h>
 #include <highgui.h>
 
-#include "legodetect.h"	//custom header file.
-
 using namespace cv;
-
-//using namespace cv;
-//using namespace std;
-void trackbarHandler(int pos);
-// these should only effect the handlebar
-int threshVal= 50.0;
-int maxVal= 255;
-int pos = cvGetTrackbarPos("bar1", "image-out");
 
 IplImage* dst =0;
 IplImage* img =0;
 IplImage* temp =0;
 
-int main(int argc, char *argv[]) {
+void getLegoPosition(void) {
+	//hardcode the path to the file to be processed
+	char* imagefile = "CamImg8129.jpg";
+
 	//prints out the first argument
-	printf("File to be input is: %s\n", argv[1]);
+	//printf("File to be input is: %s\n", argv[1]);
+	printf("File to be input is: %s\n", imagefile);
 
 	//takes in an image file from a hardcoded location
 	//IplImage* img = cvLoadImage( "lena.jpg" );
 	
 	//takes in a file from the command line
-	img = cvLoadImage( argv[1] );
+	img = cvLoadImage( imagefile );
 	
 	//create two windows
 	cvNamedWindow( "image-in" );
@@ -57,7 +53,7 @@ int main(int argc, char *argv[]) {
 
 	//print some properties
 	//see struct information for IplImage* for more info
-	printf( "Filename:    %s\n",        argv[1] );
+	printf( "Filename:    %s\n",        imagefile );
 	printf( "# channels:  %d\n",        img->nChannels );
 	printf( "Pixel depth: %d bits\n",   img->depth );
 	printf( "width:       %d pixels\n", img->width );
@@ -170,19 +166,4 @@ int main(int argc, char *argv[]) {
 	//close windows
 	cvDestroyWindow( "image-in" );
 	cvDestroyWindow( "image-out" );
-	return 0;
-}
-
-//define the trackbar handler
-void trackbarHandler(int pos) {
-	//create the image
-	IplImage* img2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
-	threshVal = cvGetTrackbarPos("bar1", "image-out");
-	//threshVal = pos;
-	//printf("Trackbar position: %d\n", threshVal);
-	//threshold the dst image
-	cvThreshold(temp, img2, threshVal, 255, CV_THRESH_BINARY);
-	//Show the processed image
-	cvShowImage("image-out", img2);
-	cvReleaseImage(&img2);
 }
