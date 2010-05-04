@@ -10,7 +10,7 @@
 #include <cv.h>
 #include <highgui.h>
 
-#include "legodetect.h"	//custom header file.
+//#include "legodetect.h"	//custom header file.
 
 using namespace cv;
 
@@ -151,8 +151,8 @@ int main(int argc, char *argv[]) {
 	//debug
 	printf("DEBUG sumx = %d, sumy = %d\n", sumx, sumy);
 	printf("DEBUG counter = %d\n", counter);
-	int averagex = divide(sumx, counter);
-	int averagey = divide(sumy, counter);
+	int averagex = sumx/ counter;
+	int averagey = sumy/ counter;
 	printf("DEBUG averagex= %d averagey= %d\n", averagex, averagey);
 	
 	//save the output image to a file
