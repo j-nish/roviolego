@@ -12,7 +12,7 @@ int divide(int a, int b) {
 #include <cv.h>
 #include <highgui.h>
 
-using namespace cv;
+//using namespace cv;
 
 IplImage* dst =0;
 IplImage* img =0;
