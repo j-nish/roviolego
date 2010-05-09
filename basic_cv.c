@@ -44,10 +44,17 @@ int main(int argc, char *argv[]) {
 	//Show the original image
 	cvShowImage("image-in", img);
 	
+	//set the rectangle for cropping
 	CvRect rect = cvRect(2, 2, 200, 200);
 
 	//crop the image
-	//cvSetImageROI(img, rect);
+	cvSetImageROI(img, rect);
+
+	IplImage* temp2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
+
+	//copy cropped image into temp2
+	//cvCopy(img, temp2, NULL);
+	
 
 	//retrieve properties about the image that was just loaded
 	int width 		= img->width;
@@ -159,7 +166,7 @@ int main(int argc, char *argv[]) {
 	cvSaveImage("tmp.jpeg", temp);
 
 	//Show the processed image
-	cvShowImage("image-out", temp);
+	cvShowImage("image-out", temp2);
 
 	//wait for a key to be pressed
 	cvWaitKey(0);
