@@ -26,8 +26,8 @@ int* toGlobal( int xpixel, int ypixel);
 void getLegoPosition(void) {
 	//hardcode the path to the file to be processed 
 	//need the typecast to avoid warning
-	//char* imagefile = (char *) "tmp.jpg";
-	char* imagefile = (char *) "CamImg8129.jpg";
+	char* imagefile =  "tmp.jpg";
+	//char* imagefile = (char *) "CamImg8129.jpg";
 
 	//prints out the first argument
 	//printf("File to be input is: %s\n", argv[1]);
@@ -67,7 +67,7 @@ void getLegoPosition(void) {
 	IplImage* temp = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
 
 	//copy from img to img2
-	cvCopy(img, img2, NULL);
+	//cvCopy(img, img2, NULL);
 	
 	//access image data
 	//there are other ways to do this, but this seemed to be the simplest
@@ -146,8 +146,9 @@ void getLegoPosition(void) {
 	//debug
 	printf("DEBUG sumx = %d, sumy = %d\n", sumx, sumy);
 	printf("DEBUG counter = %d\n", counter);
-	int averagex = divide(sumx, counter);
-	int averagey = divide(sumy, counter);
+	int averagex = 77; //sumx/ counter;
+	int averagey = 77; //sumy/ counter;
+	printf("DEBUG I'm here!\n");
 	printf("DEBUG averagex= %d averagey= %d\n", averagex, averagey);
 
 	//use function to return array of positions
