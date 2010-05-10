@@ -26,7 +26,8 @@ int* toGlobal( int xpixel, int ypixel);
 void getLegoPosition(void) {
 	//hardcode the path to the file to be processed 
 	//need the typecast to avoid warning
-	char* imagefile = (char *) "tmp.jpg";
+	//char* imagefile = (char *) "tmp.jpg";
+	char* imagefile = (char *) "CamImg8129.jpg";
 
 	//prints out the first argument
 	//printf("File to be input is: %s\n", argv[1]);
@@ -34,9 +35,10 @@ void getLegoPosition(void) {
 
 	//takes in an image file from a hardcoded location
 	//IplImage* img = cvLoadImage( "lena.jpg" );
+	img = cvLoadImage( imagefile );
 	
 	//takes in a file from the command line
-	img = cvLoadImage( imagefile );
+	//img = cvLoadImage( imagefile );
 	
 	//create two windows
 	//cvNamedWindow( "image-in" );
@@ -153,7 +155,7 @@ void getLegoPosition(void) {
 	printf("DEBUG function return is: %d and %d \n", foo[0], foo[1]);
 	
 	//save the output image to a file
-	cvSaveImage("tmp.jpeg", temp);
+	cvSaveImage("outputcv.jpg", temp);
 
 	printImageInfo( temp );
 
