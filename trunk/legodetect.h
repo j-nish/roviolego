@@ -26,7 +26,7 @@ int* toGlobal( int xpixel, int ypixel);
 void getLegoPosition(void) {
 	//hardcode the path to the file to be processed 
 	//need the typecast to avoid warning
-	char* imagefile = (char *) "CamImg8129.jpg";
+	char* imagefile = (char *) "tmp.jpg";
 
 	//prints out the first argument
 	//printf("File to be input is: %s\n", argv[1]);
@@ -44,7 +44,7 @@ void getLegoPosition(void) {
 	//cvNamedWindow( "image-out" );
 
 	//Show the original image
-	//cvShowImage("image-in", img);
+	cvShowImage("image-in", img);
 
 	//set the rectangle for cropping
 	//int new_width = 	200;
@@ -158,7 +158,7 @@ void getLegoPosition(void) {
 	printImageInfo( temp );
 
 	//Show the processed image
-	//cvShowImage("image-out", temp);
+	cvShowImage("image-out", temp);
 
 	//wait for a key to be pressed
 	//cvWaitKey(0);
