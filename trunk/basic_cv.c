@@ -16,7 +16,11 @@ using namespace cv;
 
 //using namespace cv;
 //using namespace std;
+
+//some function prototypes
 void trackbarHandler(int pos);
+void printImageInfo( IplImage* image );
+
 // these should only effect the handlebar
 int threshVal= 50.0;
 int maxVal= 255;
@@ -36,25 +40,23 @@ int main(int argc, char *argv[]) {
 	//takes in a file from the command line
 	img = cvLoadImage( argv[1] );
 	
-	//create two windows
+	//create three windows
 	cvNamedWindow( "image-in" );
-	cvNamedWindow( "image" );
+	//cvNamedWindow( "image" );
 	cvNamedWindow( "image-out" );
 
 	//Show the original image
 	cvShowImage("image-in", img);
 	
 	//set the rectangle for cropping
-	CvRect rect = cvRect(2, 2, 200, 200);
-
+	//int new_width = 	200;
+	//int new_height = 	200;
+	//CvRect rect = cvRect(2, 2, new_width, new_height);
 	//crop the image
-	cvSetImageROI(img, rect);
-
-	IplImage* temp2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
-
-	//copy cropped image into temp2
-	//cvCopy(img, temp2, NULL);
-	
+	//cvSetImageROI(img, rect);
+	//IplImage* cropped = cvCreateImage( cvSize(new_width, new_height), IPL_DEPTH_8U, 3 );
+	//copy cropped image into cropped
+	//cvCopy(img, cropped, NULL);
 
 	//retrieve properties about the image that was just loaded
 	int width 		= img->width;
@@ -62,16 +64,8 @@ int main(int argc, char *argv[]) {
 	int nchannels	= img->nChannels;
 	int step		= img->widthStep;
 
-	//print some properties
-	//see struct information for IplImage* for more info
-	printf( "Filename:    %s\n",        argv[1] );
-	printf( "# channels:  %d\n",        img->nChannels );
-	printf( "Pixel depth: %d bits\n",   img->depth );
-	printf( "width:       %d pixels\n", img->width );
-	printf( "height:      %d pixels\n", img->height );
-	printf( "Image size:  %d bytes\n",  img->imageSize );
-	printf( "Width step:  %d bytes\n",  img->widthStep );
-	printf( "Depth:  %d \n",  			img->depth );
+	//print image info
+	printImageInfo( img );
 
 	// Create an image for the output
 	IplImage* img2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
@@ -89,10 +83,10 @@ int main(int argc, char *argv[]) {
 	//also, keep in mind that HSV and RGB are two different ways of
 	//representing color
 	int x, y;
-	for (y=0; y<height; y++) {
+	for (y=0; y<img2->height; y++) {
 		//compute the pointer directly as the head of the relavant row y
 		uchar* ptr = (uchar*) (img2->imageData + y * img2->widthStep);
-		for (x=0; x<width; x++) {
+		for (x=0; x<img2->width; x++) {
 			ptr[3*x+1] = 40;		//setting the "H"-hue, or yellow
 			ptr[3*x+2] = 196;		//setting the "S"-saturation, or red
 			ptr[3*x+3] = 27;		//setting the "V"-value, or blue
@@ -109,10 +103,10 @@ int main(int argc, char *argv[]) {
 	
 
 	//after segmenting, allow only the "all 3 channels at 255" to remain
-	for (y=0; y<height; y++) {
+	for (y=0; y<dst->height; y++) {
 		//compute the pointer directly as the head of the relavant row y
 		uchar* data = (uchar*) (dst->imageData + y * dst->widthStep);
-		for (x=0; x<width; x++) {
+		for (x=0; x<dst->width; x++) {
 			if (data[3*x+1]!=0 || data[3*x+2]!=0 || data[3*x+3]!=0) {
 				data[3*x+1] = 255;	
 				data[3*x+2] = 255;
@@ -129,7 +123,7 @@ int main(int argc, char *argv[]) {
 
 	//make a convolution kernel
 	IplConvKernel* kern = cvCreateStructuringElementEx(6,6,3,3,CV_SHAPE_ELLIPSE);
-	cvShowImage("image", dst);
+	//cvShowImage("image", dst);
 
 	//apply morphological opening
 	cvMorphologyEx(dst, dst, temp, kern, CV_MOP_CLOSE);
@@ -155,18 +149,22 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
+
+
 	//debug
 	printf("DEBUG sumx = %d, sumy = %d\n", sumx, sumy);
 	printf("DEBUG counter = %d\n", counter);
 	int averagex = sumx/ counter;
 	int averagey = sumy/ counter;
 	printf("DEBUG averagex= %d averagey= %d\n", averagex, averagey);
+
+	printImageInfo( temp );
 	
 	//save the output image to a file
 	cvSaveImage("tmp.jpeg", temp);
 
 	//Show the processed image
-	cvShowImage("image-out", temp2);
+	cvShowImage("image-out", temp);
 
 	//wait for a key to be pressed
 	cvWaitKey(0);
@@ -192,4 +190,25 @@ void trackbarHandler(int pos) {
 	//Show the processed image
 	cvShowImage("image-out", img2);
 	cvReleaseImage(&img2);
+}
+
+void printImageInfo( IplImage* image ) {
+	//retrieve properties about the image that was just loaded
+	int width 		= image->width;
+	int height		= image->height;
+	int nchannels	= image->nChannels;
+	int step		= image->widthStep;
+
+	//print some properties
+	//see struct information for IplImage* for more info
+	
+	printf("--------printing image info-------\n");
+	//printf( "Filename:    %s\n",        argv[1] );
+	printf( "# of channels:  %d\n",     image->nChannels );
+	printf( "Pixel depth: %d bits\n",   image->depth );
+	printf( "width:       %d pixels\n", image->width );
+	printf( "height:      %d pixels\n", image->height );
+	printf( "Image size:  %d bytes\n",  image->imageSize );
+	printf( "Width step:  %d bytes\n",  image->widthStep );
+	printf( "Depth:  %d \n",  			image->depth );
 }
