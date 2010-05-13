@@ -26,7 +26,7 @@ int* toGlobal( int xpixel, int ypixel);
 void getLegoPosition(void) {
 	//hardcode the path to the file to be processed 
 	//need the typecast to avoid warning
-	char* imagefile =  "tmp.jpg";
+	char* imagefile =  (char *) "tmp.jpg";
 	//char* imagefile = (char *) "CamImg8129.jpg";
 
 	//prints out the first argument
