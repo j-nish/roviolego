@@ -87,7 +87,7 @@ int main(int argc, char** argv)
 		//get image from ros
 		//IplImage* imgMsgToCv(sensor_msgs::Image::ConstPtr image_message, string cv_encoding="passthrough");
 		getLegoPosition();
-		printf("DEBUGGGGG!\n");
+		//printf("DEBUGGGGG!\n");
 
 		//send command
 		pub.publish(cmd);
