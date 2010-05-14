@@ -27,8 +27,8 @@ void getLegoPosition(void) {
 	int showwindows = 1;
 	//hardcode the path to the file to be processed 
 	//need the typecast to avoid compiler warning
-	//char* imagefile =  (char *) "tmp.jpg";
-	char* imagefile = (char *) "CamImg8129.jpg";
+	char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
+	//char* imagefile = (char *) "CamImg8129.jpg";
 
 	//prints out the first argument
 	//printf("File to be input is: %s\n", argv[1]);
@@ -49,7 +49,9 @@ void getLegoPosition(void) {
 	}
 
 	//Show the original image
-	cvShowImage("image-in", img);
+	if (showwindows == 1) {
+		cvShowImage("image-in", img);
+	}
 
 	//set the rectangle for cropping
 	//int new_width = 	200;
@@ -150,8 +152,12 @@ void getLegoPosition(void) {
 	//debug
 	printf("DEBUG sumx = %d, sumy = %d\n", sumx, sumy);
 	printf("DEBUG counter = %d\n", counter);
-	int averagex = 77; //sumx/ counter;
-	int averagey = 77; //sumy/ counter;
+	//to prevent division by zero
+	if (counter ==0) {
+		counter = 1;
+	}
+	int averagex = sumx / counter;
+	int averagey = sumy / counter;
 	printf("DEBUG I'm here!\n");
 	printf("DEBUG averagex= %d averagey= %d\n", averagex, averagey);
 
@@ -166,10 +172,14 @@ void getLegoPosition(void) {
 	printImageInfo( temp );
 
 	//Show the processed image
-	cvShowImage("image-out", temp);
+	if (showwindows == 1) {
+		cvShowImage("image-out", temp);
+	}
 
 	//wait for a key to be pressed
-	cvWaitKey(0);
+	if (showwindows == 1) {
+		cvWaitKey(0);
+	}
 
 	//release the memory
 	cvReleaseImage( &img );
