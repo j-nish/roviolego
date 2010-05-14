@@ -24,10 +24,11 @@ void printImageInfo( IplImage* image);
 int* toGlobal( int xpixel, int ypixel);
 
 void getLegoPosition(void) {
+	int showwindows = 1;
 	//hardcode the path to the file to be processed 
-	//need the typecast to avoid warning
-	char* imagefile =  (char *) "tmp.jpg";
-	//char* imagefile = (char *) "CamImg8129.jpg";
+	//need the typecast to avoid compiler warning
+	//char* imagefile =  (char *) "tmp.jpg";
+	char* imagefile = (char *) "CamImg8129.jpg";
 
 	//prints out the first argument
 	//printf("File to be input is: %s\n", argv[1]);
@@ -41,9 +42,11 @@ void getLegoPosition(void) {
 	//img = cvLoadImage( imagefile );
 	
 	//create two windows
-	//cvNamedWindow( "image-in" );
-	//cvNamedWindow( "image" );
-	//cvNamedWindow( "image-out" );
+	if (showwindows == 1) {
+		cvNamedWindow( "image-in" );
+		cvNamedWindow( "image-mid" );
+		cvNamedWindow( "image-out" );
+	}
 
 	//Show the original image
 	cvShowImage("image-in", img);
@@ -117,11 +120,12 @@ void getLegoPosition(void) {
 
 	//make a convolution kernel
 	IplConvKernel* kern = cvCreateStructuringElementEx(6,6,3,3,CV_SHAPE_ELLIPSE);
-	//cvShowImage("image", dst);
+	if (showwindows == 1) {
+		cvShowImage("image-mid", dst);
+	}
 
 	//apply morphological opening
 	cvMorphologyEx(dst, dst, temp, kern, CV_MOP_CLOSE);
-
 
 	//convert to greyscale (1channel) destination must be 1 channel
 	cvCvtColor(dst, temp, CV_RGB2GRAY);
@@ -138,7 +142,7 @@ void getLegoPosition(void) {
 				temp[3*x+1] = 255;	
 				//printf("DEBUG x=%d, y=%d\n", x,y);
 				sumx += x;
-			sumy += y;
+				sumy += y;
 				counter++;
 			}
 		}
@@ -158,13 +162,14 @@ void getLegoPosition(void) {
 	//save the output image to a file
 	cvSaveImage("outputcv.jpg", temp);
 
+	//print final image stats
 	printImageInfo( temp );
 
 	//Show the processed image
 	cvShowImage("image-out", temp);
 
 	//wait for a key to be pressed
-	//cvWaitKey(0);
+	cvWaitKey(0);
 
 	//release the memory
 	cvReleaseImage( &img );
@@ -175,12 +180,6 @@ void getLegoPosition(void) {
 }
 
 void printImageInfo( IplImage* image ) {
-	//retrieve properties about the image that was just loaded
-	int width 		= image->width;
-	int height		= image->height;
-	int nchannels	= image->nChannels;
-	int step		= image->widthStep;
-
 	//print some properties
 	//see struct information for IplImage* for more info
 	
@@ -194,7 +193,6 @@ void printImageInfo( IplImage* image ) {
 	printf( "Width step:  %d bytes\n",  image->widthStep );
 	printf( "Depth:  %d \n",  			image->depth );
 }
-
 
 int* toGlobal( int xpixel, int ypixel) {
 	//do math for finding the actual position
@@ -216,4 +214,3 @@ int* toGlobal( int xpixel, int ypixel) {
 	
 	return answer;
 }
-

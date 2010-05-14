@@ -1,7 +1,7 @@
 # makefile for the opencv programs.
 #$(CC) $(FLAGS) basic_cv.c -o basic_cv.o $(ARCH)
 CC = g++
-FLAGS = -I /usr/local/include/opencv -lm -lcv -lhighgui -lcvaux -lcxcore
+FLAGS = -I /usr/local/include/opencv -lm -lcv -lhighgui -lcvaux -lcxcore -Wall
 
 UNAME := $(shell uname)
 
