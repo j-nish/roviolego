@@ -59,7 +59,7 @@ bool detectBlobs(IplImage* frame, IplImage* finalFrame) {
 			//unsigned char byte = (unsigned char) imgStream.get();
 			// this is the condiiton for being a blob pixel
 			unsigned char byte = (unsigned char) frame->imageData[(row*frame->width)+ column];
-			if(byte >= threshold) {
+			if(byte == threshold) {
 				int start = column;
 				for(;byte >= threshold; byte = (unsigned char) frame->imageData[(row*frame->width)+ column], ++column);
 				int stop = column-1;
@@ -242,7 +242,7 @@ void getLegoPosition(void) {
 
 	//make NULL kernel
 	//IplConvKernel* nullkernel = NULL;
-	int iterations = 2;
+	int iterations = 1;
 
 	//make a convolution kernel
 	IplConvKernel* kernopen = cvCreateStructuringElementEx(4,4,2,2,CV_SHAPE_ELLIPSE);
@@ -268,7 +268,7 @@ void getLegoPosition(void) {
 		for (x=0; x<dst->width; x++) {
 			if (temp[3*x+1] == 255) {
 				//temp[3*x+1] = 255;	
-				//printf("DEBUG x=%d, y=%d\n", x,y);
+				//printf("DEBUG: x=%d, y=%d\n", x,y);
 				sumx += x;
 				sumy += y;
 				counter++;
@@ -276,19 +276,18 @@ void getLegoPosition(void) {
 		}
 	}
 	//debug
-	printf("DEBUG sumx = %d, sumy = %d\n", sumx, sumy);
-	printf("DEBUG counter = %d\n", counter);
+	printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
 	//to prevent division by zero
 	if (counter ==0) {
 		counter = 1;
 	}
 	double averagex = (double) sumx / (double) counter;
 	double averagey = (double) sumy / (double) counter;
-	printf("DEBUG averagex= %f averagey= %f\n", averagex, averagey);
+	printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
 
 	//use function to return pointer to array of positions
 	int* foo = toGlobal( (int) averagex, (int) averagey);
-	printf("DEBUG function return is: %d and %d \n", foo[0], foo[1]);
+	printf("DEBUG: function return is: %d and %d \n", foo[0], foo[1]);
 	
 	//save the output image to a file
 	cvSaveImage("outputcv.jpg", temp);
@@ -384,6 +383,7 @@ void printImageInfo( IplImage* image ) {
 	printf( "Image size:  %d bytes\n",  image->imageSize );
 	printf( "Width step:  %d bytes\n",  image->widthStep );
 	printf( "Depth:  %d \n",  			image->depth );
+	printf("----------------------------------\n");
 }
 
 int* toGlobal( int xpixel, int ypixel) {
@@ -400,9 +400,8 @@ int* toGlobal( int xpixel, int ypixel) {
 
 	int y = f*hheight/ypixel + 5; //adjust as needed
 	int x = y*xpixel/f;
+	//printf("DEBUG: x = %d, y = %d\n", x, y);
 	answerarray[0] = x;
-	printf("DEBUG: x = %d\n", x);
-	printf("DEBUG: y = %d\n", y);
 	answerarray[1] = y;
 	
 	//something wrong with the pointer idea
