@@ -62,21 +62,15 @@ bool detectBlobs(IplImage* frame, IplImage* finalFrame)
 	}
 
 	/* Check lineBlobs for a touching lineblob on the next row */
-	for(int row = 0; row < imgData.size(); ++row)
-	{
-		for(int entryLine1 = 0; entryLine1 < imgData[row].size(); ++entryLine1)
-		{
-			for(int entryLine2 = 0; entryLine2 < imgData[row+1].size(); ++entryLine2)
-			{
-				if(!((imgData[row][entryLine1].max < imgData[row+1][entryLine2].min) || (imgData[row][entryLine1].min > imgData[row+1][entryLine2].max)))
-				{
-					if(imgData[row+1][entryLine2].attached == false)
-					{
+	for(int row = 0; row < imgData.size(); ++row) {
+		for(int entryLine1 = 0; entryLine1 < imgData[row].size(); ++entryLine1) {
+			for(int entryLine2 = 0; entryLine2 < imgData[row+1].size(); ++entryLine2) {
+				if(!((imgData[row][entryLine1].max < imgData[row+1][entryLine2].min) || (imgData[row][entryLine1].min > imgData[row+1][entryLine2].max))) {
+					if(imgData[row+1][entryLine2].attached == false) {
 						imgData[row+1][entryLine2].blobId = imgData[row][entryLine1].blobId;
 						imgData[row+1][entryLine2].attached = true;
 					}
-					else
-					{
+					else {
 						imgData[row][entryLine1].blobId = imgData[row+1][entryLine2].blobId;
 						imgData[row][entryLine1].attached = true;
 					}
@@ -118,7 +112,7 @@ bool detectBlobs(IplImage* frame, IplImage* finalFrame)
 		int size = ((*i).second.max.x - (*i).second.min.x) * ((*i).second.max.y - (*i).second.min.y);
 
 		// Print coordinates on image, if it is large enough
-		if(size > 800)
+		if(size > 200)
 		{
 			CvFont font;
 			cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
@@ -137,11 +131,9 @@ bool detectBlobs(IplImage* frame, IplImage* finalFrame)
 	}
 }
 
-int main()
-{
+int main() {
 	CvCapture * capture = cvCaptureFromCAM(CV_CAP_ANY);
-	if(!capture)
-	{
+	if(!capture) {
 		fprintf( stderr, "ERROR: capture is NULL \n" );
 		getchar();
 		return -1;
@@ -155,16 +147,15 @@ int main()
 	//jun
 	char *imagefile = (char *) "/home/jn/svn4/outputcv.jpg";
 
-	while(1)
-	{	
+	//while(1)
+	//{	
 		// Get one frame from the web cam
 		//IplImage* frame = cvQueryFrame(capture);
 		IplImage* frame = cvLoadImage( imagefile );
-		if(!frame)
-		{
+		if(!frame) {
 			fprintf( stderr, "ERROR: frame is null...\n" );
 			getchar();
-			break;
+			//break;
 		}
 
 		IplImage* gsFrame;
@@ -189,14 +180,15 @@ int main()
 		cvShowImage( "Capture", frame );
 		cvShowImage( "Result", finalFrame );
 		// Do not release the frame!
+		cvWaitKey(0);
 
 		cvReleaseImage(&gsFrame);
 		cvReleaseImage(&finalFrame);
 
 		//If ESC key pressed, Key=0x10001B under OpenCV 0.9.7(linux version),
 		//remove higher bits using AND operator
-		if( (cvWaitKey(10) & 255) == 27 ) break;
-	}
+		//if( (cvWaitKey(10) & 255) == 27 ) break;
+	//}
 
 	// Release the capture device housekeeping
 	cvReleaseCapture( &capture );

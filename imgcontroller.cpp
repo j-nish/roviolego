@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 		cmd.angular.z=0;
 
 		if (dist<10){
-			cmd.linear.x=1;
+			cmd.linear.x=0;
 		}else{
 			cmd.linear.x=0;
 		}
