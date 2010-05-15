@@ -1,7 +1,4 @@
 // header file for lego detection opencv program.
-int divide(int a, int b) {
-	return a/b;
-}
 
 #ifdef _CH_
 #pragma package <opencv>
@@ -12,6 +9,15 @@ int divide(int a, int b) {
 #include <math.h>
 #include <cv.h>
 #include <highgui.h>
+//for blob code
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <map>
+#include <ctime>
+
+using namespace std;
 
 //using namespace cv;
 
@@ -23,6 +29,112 @@ IplImage* temp =0;
 void printImageInfo( IplImage* image);
 int* toGlobal( int xpixel, int ypixel);
 
+struct coordinate {
+	unsigned int x, y;
+	void * data;
+};
+
+struct lineBlob {
+	unsigned int min, max;
+	unsigned int blobId;
+	bool attached;
+};
+
+struct blob {
+	//unsigned int blobId;
+	coordinate min, max;
+	coordinate center;
+};
+
+// function that does the actual blob detection
+bool detectBlobs(IplImage* frame, IplImage* finalFrame) {
+	int blobCounter = 0;
+	map<unsigned int, blob> blobs;
+
+    unsigned char threshold = 235;
+
+    vector< vector<lineBlob> > imgData(frame->width);
+	for(int row = 0; row < frame->height; ++row) {
+		for(int column = 0; column < frame->width; ++column) {
+			//unsigned char byte = (unsigned char) imgStream.get();
+			// this is the condiiton for being a blob pixel
+			unsigned char byte = (unsigned char) frame->imageData[(row*frame->width)+ column];
+			if(byte >= threshold) {
+				int start = column;
+				for(;byte >= threshold; byte = (unsigned char) frame->imageData[(row*frame->width)+ column], ++column);
+				int stop = column-1;
+				lineBlob lineBlobData = {start, stop, blobCounter, false};
+				imgData[row].push_back(lineBlobData);
+				blobCounter++;
+			}
+		}
+	}
+
+	/* Check lineBlobs for a touching lineblob on the next row */
+	for(int row = 0; row < imgData.size(); ++row) {
+		for(int entryLine1 = 0; entryLine1 < imgData[row].size(); ++entryLine1) {
+			for(int entryLine2 = 0; entryLine2 < imgData[row+1].size(); ++entryLine2) {
+				if(!((imgData[row][entryLine1].max < imgData[row+1][entryLine2].min) || (imgData[row][entryLine1].min > imgData[row+1][entryLine2].max))) {
+					if(imgData[row+1][entryLine2].attached == false) {
+						imgData[row+1][entryLine2].blobId = imgData[row][entryLine1].blobId;
+						imgData[row+1][entryLine2].attached = true;
+					}
+					else {
+						imgData[row][entryLine1].blobId = imgData[row+1][entryLine2].blobId;
+						imgData[row][entryLine1].attached = true;
+					}
+				}
+			}
+		}
+	}
+
+	// Sort and group blobs
+	for(int row = 0; row < imgData.size(); ++row) {
+		for(int entry = 0; entry < imgData[row].size(); ++entry) {
+			if(blobs.find(imgData[row][entry].blobId) == blobs.end()) // Blob does not exist yet
+			{
+				blob blobData = {{imgData[row][entry].min, row}, {imgData[row][entry].max, row}, {0,0}};
+				blobs[imgData[row][entry].blobId] = blobData;
+			}
+			else {
+				if(imgData[row][entry].min < blobs[imgData[row][entry].blobId].min.x)
+					blobs[imgData[row][entry].blobId].min.x = imgData[row][entry].min;
+				else if(imgData[row][entry].max > blobs[imgData[row][entry].blobId].max.x)
+					blobs[imgData[row][entry].blobId].max.x = imgData[row][entry].max;
+				if(row < blobs[imgData[row][entry].blobId].min.y)
+					blobs[imgData[row][entry].blobId].min.y = row;
+				else if(row > blobs[imgData[row][entry].blobId].max.y)
+					blobs[imgData[row][entry].blobId].max.y = row;
+			}
+		}
+	}
+
+	// Calculate center
+	for(map<unsigned int, blob>::iterator i = blobs.begin(); i != blobs.end(); ++i) {
+		(*i).second.center.x = (*i).second.min.x + ((*i).second.max.x - (*i).second.min.x) / 2;
+		(*i).second.center.y = (*i).second.min.y + ((*i).second.max.y - (*i).second.min.y) / 2;
+
+		int size = ((*i).second.max.x - (*i).second.min.x) * ((*i).second.max.y - (*i).second.min.y);
+
+		// Print coordinates on image, if it is large enough
+		if(size > 200) {
+			CvFont font;
+			cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
+			char textBuffer[128];
+
+			// Draw crosshair and print coordinates (just for debugging, not necessary for later multi-touch use)
+			cvLine(finalFrame, cvPoint((*i).second.center.x - 5, (*i).second.center.y), cvPoint((*i).second.center.x + 5, (*i).second.center.y), cvScalar(0, 0, 153), 1);
+			cvLine(finalFrame, cvPoint((*i).second.center.x, (*i).second.center.y - 5), cvPoint((*i).second.center.x, (*i).second.center.y + 5), cvScalar(0, 0, 153), 1);
+			sprintf(textBuffer, "(%d, %d)", (*i).second.center.x, (*i).second.center.y);
+			cvPutText(finalFrame, textBuffer, cvPoint((*i).second.center.x + 5, (*i).second.center.y - 5), &font, cvScalar(0, 0, 153));
+			cvRectangle(finalFrame, cvPoint((*i).second.min.x, (*i).second.min.y), cvPoint((*i).second.max.x, (*i).second.max.y), cvScalar(0, 0, 153), 1);
+
+			// Show center point
+			//cout << "(" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
+		}
+	}
+}
+//start "main" program
 void getLegoPosition(void) {
 	int showwindows = 1;
 	//hardcode the path to the file to be processed 
@@ -44,7 +156,7 @@ void getLegoPosition(void) {
 	//create two windows
 	if (showwindows == 1) {
 		cvNamedWindow( "image-in" );
-		cvNamedWindow( "image-mid" );
+		cvNamedWindow( "image after segmentation" );
 		cvNamedWindow( "image-out" );
 	}
 
@@ -100,34 +212,47 @@ void getLegoPosition(void) {
 	//threshold the dst image
 	cvThreshold(img2, dst, 50.0, 255, CV_THRESH_BINARY);
 	
+	if (showwindows == 1) {
+		cvShowImage("image after segmentation", dst);
+	}
 
 	//after segmenting, allow only the "all 3 channels at 255" to remain
 	for (y=0; y<dst->height; y++) {
 		//compute the pointer directly as the head of the relavant row y
 		uchar* data = (uchar*) (dst->imageData + y * dst->widthStep);
 		for (x=0; x<dst->width; x++) {
+			//the "black" parts should be converted to 255 and the rest should be set to 0
 			if (data[3*x+1]!=0 || data[3*x+2]!=0 || data[3*x+3]!=0) {
+				data[3*x+1] = 0;	
+				data[3*x+2] = 0;
+				data[3*x+3] = 0;
+			} else {
 				data[3*x+1] = 255;	
 				data[3*x+2] = 255;
 				data[3*x+3] = 255;
 			}
 
 			if(y<dst->height/2) {
-				data[3*x+1] = 255;	
-				data[3*x+2] = 255;
-				data[3*x+3] = 255;
+				data[3*x+1] = 0;	
+				data[3*x+2] = 0;
+				data[3*x+3] = 0;
 			}
 		}
 	}
 
+	//make NULL kernel
+	//IplConvKernel* nullkernel = NULL;
+	int iterations = 2;
+
 	//make a convolution kernel
-	IplConvKernel* kern = cvCreateStructuringElementEx(6,6,3,3,CV_SHAPE_ELLIPSE);
-	if (showwindows == 1) {
-		cvShowImage("image-mid", dst);
-	}
+	IplConvKernel* kernopen = cvCreateStructuringElementEx(4,4,2,2,CV_SHAPE_ELLIPSE);
+	IplConvKernel* kerndilate = cvCreateStructuringElementEx(2,2,1,1,CV_SHAPE_ELLIPSE);
+
+	//perform dilation which takes the max
+	cvDilate(dst, dst, kerndilate, iterations);
 
 	//apply morphological opening
-	cvMorphologyEx(dst, dst, temp, kern, CV_MOP_CLOSE);
+	cvMorphologyEx(dst, dst, temp, kernopen, CV_MOP_CLOSE);
 
 	//convert to greyscale (1channel) destination must be 1 channel
 	cvCvtColor(dst, temp, CV_RGB2GRAY);
@@ -136,12 +261,13 @@ void getLegoPosition(void) {
 	int sumx = 0;
 	int sumy = 0;
 	int counter = 0;
+	//count up the number of pixels and their x-y pixel coordinates
 	for (y=0; y<dst->height; y++) {
 		//compute the pointer directly as the head of the relavant row y
 		uchar* temp = (uchar*) (dst->imageData + y * dst->widthStep);
 		for (x=0; x<dst->width; x++) {
-			if (temp[3*x+1]==0) {
-				temp[3*x+1] = 255;	
+			if (temp[3*x+1] == 255) {
+				//temp[3*x+1] = 255;	
 				//printf("DEBUG x=%d, y=%d\n", x,y);
 				sumx += x;
 				sumy += y;
@@ -156,34 +282,90 @@ void getLegoPosition(void) {
 	if (counter ==0) {
 		counter = 1;
 	}
-	int averagex = sumx / counter;
-	int averagey = sumy / counter;
-	printf("DEBUG I'm here!\n");
-	printf("DEBUG averagex= %d averagey= %d\n", averagex, averagey);
+	double averagex = (double) sumx / (double) counter;
+	double averagey = (double) sumy / (double) counter;
+	printf("DEBUG averagex= %f averagey= %f\n", averagex, averagey);
 
-	//use function to return array of positions
-	int* foo = toGlobal( averagex, averagey);
+	//use function to return pointer to array of positions
+	int* foo = toGlobal( (int) averagex, (int) averagey);
 	printf("DEBUG function return is: %d and %d \n", foo[0], foo[1]);
 	
 	//save the output image to a file
 	cvSaveImage("outputcv.jpg", temp);
 
 	//print final image stats
-	printImageInfo( temp );
+	//printImageInfo( temp );
 
 	//Show the processed image
 	if (showwindows == 1) {
 		cvShowImage("image-out", temp);
 	}
+	//#############################################################
+	CvCapture * capture = cvCaptureFromCAM(CV_CAP_ANY);
+	if(!capture) {
+		fprintf( stderr, "ERROR: capture is NULL \n" );
+		getchar();
+		//return -1;
+	}
+
+	// Create a window in which the captured images will be presented
+	//cvNamedWindow( "Capture", CV_WINDOW_AUTOSIZE );
+	cvNamedWindow("Capture", 0);
+	cvNamedWindow("Result", 0);
+
+	//jun
+	//char *imagefile = (char *) "/home/jn/svn4/outputcv.jpg";
+
+	//while(1)
+	//{	
+	// Get one frame from the web cam
+	//IplImage* frame = cvQueryFrame(capture);
+	IplImage* frame = cvLoadImage( imagefile );
+	if(!frame) {
+		fprintf( stderr, "ERROR: frame is null...\n" );
+		getchar();
+		//break;
+	}
+
+	IplImage* gsFrame;
+	IplImage* finalFrame;
+	gsFrame = cvCreateImage(cvSize(frame->width,frame->height), IPL_DEPTH_8U, 1);
+	finalFrame = cvCloneImage(frame);
+
+	// Convert image to grayscale
+	cvCvtColor(frame, gsFrame, CV_BGR2GRAY);
+
+	// Blur the images to reduce the false positives
+	cvSmooth(gsFrame, gsFrame, CV_BLUR);
+	cvSmooth(finalFrame, finalFrame, CV_BLUR);
+
+	// Detection (with timer for debugging purposes)
+	clock_t start = clock();
+	detectBlobs(gsFrame, finalFrame);
+	clock_t end = clock();
+	cout << end-start << endl;
+
+	// Show images in a nice window
+	cvShowImage( "Capture", frame );
+	cvShowImage( "Result", finalFrame );
 
 	//wait for a key to be pressed
 	if (showwindows == 1) {
 		cvWaitKey(0);
 	}
 
+	cvReleaseImage(&gsFrame);
+	cvReleaseImage(&finalFrame);
+	cvReleaseCapture( &capture );
+	cvDestroyWindow( "Capture" );
+	cvDestroyWindow( "Result" );
+
+		//#######################end blobs
+
 	//release the memory
 	cvReleaseImage( &img );
 	cvReleaseImage( &dst );
+	cvReleaseImage( &temp );
 	//close windows
 	//cvDestroyWindow( "image-in" );
 	//cvDestroyWindow( "image-out" );
@@ -206,7 +388,8 @@ void printImageInfo( IplImage* image ) {
 
 int* toGlobal( int xpixel, int ypixel) {
 	//do math for finding the actual position
-	int answerarray[2];
+	int* answerarray = (int *) malloc(sizeof(int) * 2);
+	//int answerarray[2];
 	int f = 700;
 	int yhorz = 225;
 	double hheight = 3.5;
@@ -215,11 +398,14 @@ int* toGlobal( int xpixel, int ypixel) {
 	xpixel -= 320;
 	ypixel -= yhorz;
 
-	int y = f*hheight/ypixel;
+	int y = f*hheight/ypixel + 5; //adjust as needed
 	int x = y*xpixel/f;
 	answerarray[0] = x;
+	printf("DEBUG: x = %d\n", x);
+	printf("DEBUG: y = %d\n", y);
 	answerarray[1] = y;
-
+	
+	//something wrong with the pointer idea
 	answer = &answerarray[0];
 	
 	return answer;
