@@ -11,7 +11,6 @@
 #include <highgui.h>
 
 using namespace std;
-using namespace cv;
 
 //#include "/home/jn/svn4/legodetect.h"
 
@@ -159,11 +158,12 @@ void printImageInfo( IplImage* image ) {
 	printf("----------------------------------\n");
 }
 
-int* answerarray = (int *) malloc(sizeof(int) * 2);
+// array that hold lego position data
+int* legoPos = (int *) malloc(sizeof(int) * 2);
 
 int* toGlobal( int xpixel, int ypixel) {
 	//do math for finding the actual position
-	//int answerarray[2];
+	//int legoPos[2];
 	int f = 600;
 	int yhorz = 220;
 	double hheight = 3.5;
@@ -175,11 +175,11 @@ int* toGlobal( int xpixel, int ypixel) {
 	int y = f*hheight/ypixel; //adjust as needed
 	int x = y*xpixel/f;
 	//printf("DEBUG: x = %d, y = %d\n", x, y);
-	answerarray[0] = x;
-	answerarray[1] = y;
+	legoPos[0] = x;
+	legoPos[1] = y;
 	
-	//something wrong with the pointer idea
-	answer = &answerarray[0];
+	//something wrong with the pointer
+	answer = &legoPos[0];
 	
 	return answer;
 }
@@ -337,7 +337,7 @@ void getLegoPosition(void) {
 
 	//use function to return pointer to array of positions
 	int* foo = toGlobal( (int) averagex, (int) averagey);
-	printf("DEBUG: function return is: %d and %d \n", foo[0], foo[1]);
+	//printf("DEBUG: function return is: %d and %d \n", foo[0], foo[1]);
 	
 
 	//save the output image to a file
@@ -482,7 +482,7 @@ int main(int argc, char** argv)
 		//get image from ros
 		//IplImage* imgMsgToCv(sensor_msgs::Image::ConstPtr image_message, string cv_encoding="passthrough");
 		getLegoPosition();
-		//printf("DEBUGGGGG!\n");
+		printf("DEBUGGGGG! legoPos[0] = %d, legoPos[1] = %d\n", legoPos[0], legoPos[1]);
 
 		//send command
 		pub.publish(cmd);
