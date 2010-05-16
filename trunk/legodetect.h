@@ -1,5 +1,4 @@
 // header file for lego detection opencv program.
-
 #ifdef _CH_
 #pragma package <opencv>
 #endif
@@ -18,8 +17,9 @@
 #include <ctime>
 
 using namespace std;
+using namespace cv;
 
-//using namespace cv;
+#define TRUE 1
 
 IplImage* dst =0;
 IplImage* img =0;
@@ -29,6 +29,7 @@ IplImage* temp =0;
 void printImageInfo( IplImage* image);
 int* toGlobal( int xpixel, int ypixel);
 
+// for the blob code
 struct coordinate {
 	unsigned int x, y;
 	void * data;
@@ -47,7 +48,7 @@ struct blob {
 };
 
 // function that does the actual blob detection
-bool detectBlobs(IplImage* frame, IplImage* finalFrame) {
+void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 	int blobCounter = 0;
 	map<unsigned int, blob> blobs;
 
@@ -57,9 +58,9 @@ bool detectBlobs(IplImage* frame, IplImage* finalFrame) {
 	for(int row = 0; row < frame->height; ++row) {
 		for(int column = 0; column < frame->width; ++column) {
 			//unsigned char byte = (unsigned char) imgStream.get();
-			// this is the condiiton for being a blob pixel
+			// this is the condition for being a blob pixel
 			unsigned char byte = (unsigned char) frame->imageData[(row*frame->width)+ column];
-			if(byte == threshold) {
+			if(byte > threshold) {
 				int start = column;
 				for(;byte >= threshold; byte = (unsigned char) frame->imageData[(row*frame->width)+ column], ++column);
 				int stop = column-1;
@@ -71,9 +72,9 @@ bool detectBlobs(IplImage* frame, IplImage* finalFrame) {
 	}
 
 	/* Check lineBlobs for a touching lineblob on the next row */
-	for(int row = 0; row < imgData.size(); ++row) {
-		for(int entryLine1 = 0; entryLine1 < imgData[row].size(); ++entryLine1) {
-			for(int entryLine2 = 0; entryLine2 < imgData[row+1].size(); ++entryLine2) {
+	for(int row = 0; row < (int) imgData.size(); ++row) {
+		for(int entryLine1 = 0; entryLine1 < (int) imgData[row].size(); ++entryLine1) {
+			for(int entryLine2 = 0; entryLine2 < (int) imgData[row+1].size(); ++entryLine2) {
 				if(!((imgData[row][entryLine1].max < imgData[row+1][entryLine2].min) || (imgData[row][entryLine1].min > imgData[row+1][entryLine2].max))) {
 					if(imgData[row+1][entryLine2].attached == false) {
 						imgData[row+1][entryLine2].blobId = imgData[row][entryLine1].blobId;
@@ -89,8 +90,8 @@ bool detectBlobs(IplImage* frame, IplImage* finalFrame) {
 	}
 
 	// Sort and group blobs
-	for(int row = 0; row < imgData.size(); ++row) {
-		for(int entry = 0; entry < imgData[row].size(); ++entry) {
+	for(int row = 0; row < (int) imgData.size(); ++row) {
+		for(int entry = 0; entry < (int) imgData[row].size(); ++entry) {
 			if(blobs.find(imgData[row][entry].blobId) == blobs.end()) // Blob does not exist yet
 			{
 				blob blobData = {{imgData[row][entry].min, row}, {imgData[row][entry].max, row}, {0,0}};
@@ -101,9 +102,9 @@ bool detectBlobs(IplImage* frame, IplImage* finalFrame) {
 					blobs[imgData[row][entry].blobId].min.x = imgData[row][entry].min;
 				else if(imgData[row][entry].max > blobs[imgData[row][entry].blobId].max.x)
 					blobs[imgData[row][entry].blobId].max.x = imgData[row][entry].max;
-				if(row < blobs[imgData[row][entry].blobId].min.y)
+				if(row < (int) blobs[imgData[row][entry].blobId].min.y)
 					blobs[imgData[row][entry].blobId].min.y = row;
-				else if(row > blobs[imgData[row][entry].blobId].max.y)
+				else if(row > (int) blobs[imgData[row][entry].blobId].max.y)
 					blobs[imgData[row][entry].blobId].max.y = row;
 			}
 		}
@@ -134,9 +135,10 @@ bool detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		}
 	}
 }
+
 //start "main" program
 void getLegoPosition(void) {
-	int showwindows = 1;
+	int showwindows = TRUE;
 	//hardcode the path to the file to be processed 
 	//need the typecast to avoid compiler warning
 	char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
@@ -278,7 +280,7 @@ void getLegoPosition(void) {
 	//debug
 	printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
 	//to prevent division by zero
-	if (counter ==0) {
+	if (counter == 0) {
 		counter = 1;
 	}
 	double averagex = (double) sumx / (double) counter;
@@ -300,30 +302,27 @@ void getLegoPosition(void) {
 		cvShowImage("image-out", temp);
 	}
 	//#############################################################
-	CvCapture * capture = cvCaptureFromCAM(CV_CAP_ANY);
-	if(!capture) {
-		fprintf( stderr, "ERROR: capture is NULL \n" );
-		getchar();
-		//return -1;
-	}
+	// for capturing for a webcam
+	//CvCapture * capture = cvCaptureFromCAM(CV_CAP_ANY);
+	//if(!capture) {
+		//fprintf( stderr, "ERROR: capture is NULL \n" );
+		//getchar();
+	//}
 
 	// Create a window in which the captured images will be presented
 	//cvNamedWindow( "Capture", CV_WINDOW_AUTOSIZE );
-	cvNamedWindow("Capture", 0);
-	cvNamedWindow("Result", 0);
+	if (showwindows == 1) {
+		cvNamedWindow("Capture");
+		cvNamedWindow("Result");
+	}
 
-	//jun
-	//char *imagefile = (char *) "/home/jn/svn4/outputcv.jpg";
 
-	//while(1)
-	//{	
 	// Get one frame from the web cam
 	//IplImage* frame = cvQueryFrame(capture);
 	IplImage* frame = cvLoadImage( imagefile );
 	if(!frame) {
 		fprintf( stderr, "ERROR: frame is null...\n" );
 		getchar();
-		//break;
 	}
 
 	IplImage* gsFrame;
@@ -345,19 +344,20 @@ void getLegoPosition(void) {
 	cout << end-start << endl;
 
 	// Show images in a nice window
-	cvShowImage( "Capture", frame );
-	cvShowImage( "Result", finalFrame );
+	if (showwindows == 1) {
+		cvShowImage( "Capture", frame );
+		cvShowImage( "Result", finalFrame );
+	}
 
 	//wait for a key to be pressed
 	if (showwindows == 1) {
 		cvWaitKey(0);
 	}
 
-	cvReleaseImage(&gsFrame);
-	cvReleaseImage(&finalFrame);
-	cvReleaseCapture( &capture );
-	cvDestroyWindow( "Capture" );
-	cvDestroyWindow( "Result" );
+	//if (showwindows == 1) {
+		//cvDestroyWindow( "Capture" );
+		//cvDestroyWindow( "Result" );
+	//}
 
 		//#######################end blobs
 
@@ -365,6 +365,9 @@ void getLegoPosition(void) {
 	cvReleaseImage( &img );
 	cvReleaseImage( &dst );
 	cvReleaseImage( &temp );
+	cvReleaseImage( &gsFrame);
+	cvReleaseImage( &finalFrame);
+	//cvReleaseCapture( &capture );
 	//close windows
 	//cvDestroyWindow( "image-in" );
 	//cvDestroyWindow( "image-out" );
@@ -390,15 +393,15 @@ int* toGlobal( int xpixel, int ypixel) {
 	//do math for finding the actual position
 	int* answerarray = (int *) malloc(sizeof(int) * 2);
 	//int answerarray[2];
-	int f = 700;
-	int yhorz = 225;
+	int f = 600;
+	int yhorz = 220;
 	double hheight = 3.5;
 	int* answer;
 
 	xpixel -= 320;
 	ypixel -= yhorz;
 
-	int y = f*hheight/ypixel + 5; //adjust as needed
+	int y = f*hheight/ypixel; //adjust as needed
 	int x = y*xpixel/f;
 	//printf("DEBUG: x = %d, y = %d\n", x, y);
 	answerarray[0] = x;
