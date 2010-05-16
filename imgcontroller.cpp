@@ -12,12 +12,9 @@
 
 using namespace std;
 
-//#include "/home/jn/svn4/legodetect.h"
-
 #define PI 3.14159265
 
-#define TRUE 0
-
+// global cv variables
 IplImage* dst =0;
 IplImage* img =0;
 IplImage* temp =0;
@@ -142,10 +139,9 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		}
 	}
 }
+// print out some properties of the image
 void printImageInfo( IplImage* image ) {
-	//print some properties
-	//see struct information for IplImage* for more info
-	
+	// print some properties
 	printf("--------printing image info-------\n");
 	//printf( "Filename:    %s\n",        argv[1] );
 	printf( "# of channels:  %d\n",     image->nChannels );
@@ -161,13 +157,13 @@ void printImageInfo( IplImage* image ) {
 // array that hold lego position data
 int* legoPos = (int *) malloc(sizeof(int) * 2);
 
-int* toGlobal( int xpixel, int ypixel) {
-	//do math for finding the actual position
-	//int legoPos[2];
-	int f = 600;
-	int yhorz = 220;
+// implementation of the pinhole camera model
+void toGlobal( int xpixel, int ypixel) {
+	// do math for finding the actual position
+	int f = 600;			// focal length
+	int yhorz = 220;		// y-horizon
 	double hheight = 3.5;
-	int* answer;
+	//int* answer;
 
 	xpixel -= 320;
 	ypixel -= yhorz;
@@ -179,13 +175,13 @@ int* toGlobal( int xpixel, int ypixel) {
 	legoPos[1] = y;
 	
 	//something wrong with the pointer
-	answer = &legoPos[0];
+	//answer = &legoPos[0];
 	
-	return answer;
+	//return answer;
 }
 
 void getLegoPosition(void) {
-	int showwindows = TRUE;
+	int showwindows = 0;
 	//hardcode the path to the file to be processed 
 	//need the typecast to avoid compiler warning
 	char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
@@ -266,12 +262,12 @@ void getLegoPosition(void) {
 		cvShowImage("image after segmentation", dst);
 	}
 
-	//after segmenting, allow only the "all 3 channels at 255" to remain
+	// after segmenting, allow only the "all 3 channels at 255" to remain
 	for (y=0; y<dst->height; y++) {
-		//compute the pointer directly as the head of the relavant row y
+		// compute the pointer directly as the head of the relavant row y
 		uchar* data = (uchar*) (dst->imageData + y * dst->widthStep);
 		for (x=0; x<dst->width; x++) {
-			//the "black" parts should be converted to 255 and the rest should be set to 0
+			// the "black" parts should be converted to 255 and the rest should be set to 0
 			if (data[3*x+1]!=0 || data[3*x+2]!=0 || data[3*x+3]!=0) {
 				data[3*x+1] = 0;	
 				data[3*x+2] = 0;
@@ -290,34 +286,33 @@ void getLegoPosition(void) {
 		}
 	}
 
-	//make NULL kernel
+	// make NULL kernel
 	//IplConvKernel* nullkernel = NULL;
 	int iterations = 1;
 
-	//make a convolution kernel
+	// make a convolution kernel
 	IplConvKernel* kernopen = cvCreateStructuringElementEx(4,4,2,2,CV_SHAPE_ELLIPSE);
 	IplConvKernel* kerndilate = cvCreateStructuringElementEx(2,2,1,1,CV_SHAPE_ELLIPSE);
 
-	//perform dilation which takes the max
+	// perform dilation which takes the max
 	cvDilate(dst, dst, kerndilate, iterations);
 
-	//apply morphological opening
+	// apply morphological opening
 	cvMorphologyEx(dst, dst, temp, kernopen, CV_MOP_CLOSE);
 
-	//convert to greyscale (1channel) destination must be 1 channel
+	// convert to greyscale (1channel) destination must be 1 channel
 	cvCvtColor(dst, temp, CV_RGB2GRAY);
 
-	//find the mean location of all the pixels
+	// find the mean location of all the pixels
 	int sumx = 0;
 	int sumy = 0;
 	int counter = 0;
-	//count up the number of pixels and their x-y pixel coordinates
+	// count up the number of pixels and their x-y pixel coordinates
 	for (y=0; y<dst->height; y++) {
-		//compute the pointer directly as the head of the relavant row y
+		// compute the pointer directly as the head of the relavant row y
 		uchar* temp = (uchar*) (dst->imageData + y * dst->widthStep);
 		for (x=0; x<dst->width; x++) {
 			if (temp[3*x+1] == 255) {
-				//temp[3*x+1] = 255;	
 				//printf("DEBUG: x=%d, y=%d\n", x,y);
 				sumx += x;
 				sumy += y;
@@ -325,9 +320,9 @@ void getLegoPosition(void) {
 			}
 		}
 	}
-	//debug
+	// debug
 	printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
-	//to prevent division by zero
+	// to prevent division by zero
 	if (counter == 0) {
 		counter = 1;
 	}
@@ -335,18 +330,18 @@ void getLegoPosition(void) {
 	double averagey = (double) sumy / (double) counter;
 	printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
 
-	//use function to return pointer to array of positions
-	int* foo = toGlobal( (int) averagex, (int) averagey);
+	// use function to return pointer to array of positions
+	//int* foo = toGlobal( (int) averagex, (int) averagey);
 	//printf("DEBUG: function return is: %d and %d \n", foo[0], foo[1]);
 	
 
-	//save the output image to a file
+	// save the output image to a file
 	cvSaveImage("outputcv.jpg", temp);
 
-	//print final image stats
+	// print final image stats
 	//printImageInfo( temp );
 
-	//Show the processed image
+	// Show the processed image
 	if (showwindows == 1) {
 		cvShowImage("image-out", temp);
 	}
@@ -482,7 +477,7 @@ int main(int argc, char** argv)
 		//get image from ros
 		//IplImage* imgMsgToCv(sensor_msgs::Image::ConstPtr image_message, string cv_encoding="passthrough");
 		getLegoPosition();
-		printf("DEBUGGGGG! legoPos[0] = %d, legoPos[1] = %d\n", legoPos[0], legoPos[1]);
+		printf("DEBUG: legoPos[0] = %d, legoPos[1] = %d\n", legoPos[0], legoPos[1]);
 
 		//send command
 		pub.publish(cmd);
