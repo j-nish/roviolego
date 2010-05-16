@@ -233,7 +233,7 @@ void getLegoPosition(void) {
 
 	//prints out the first argument
 	//printf("File to be input is: %s\n", argv[1]);
-	printf("File to be input is: %s\n", imagefile);
+	//printf("File to be input is: %s\n", imagefile);
 
 	//takes in an image file from a hardcoded location
 	//IplImage* img = cvLoadImage( "lena.jpg" );
@@ -364,14 +364,14 @@ void getLegoPosition(void) {
 		}
 	}
 	// debug
-	printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
+	//printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
 	// to prevent division by zero
 	if (counter == 0) {
 		counter = 1;
 	}
 	double averagex = (double) sumx / (double) counter;
 	double averagey = (double) sumy / (double) counter;
-	printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
+	//printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
 
 	// use function to return pointer to array of positions
 	//int* foo = toGlobal( (int) averagex, (int) averagey);
@@ -481,14 +481,13 @@ void moveLego(double p1x, double p1y, double p2x, double p2y){
 
 // set legoX,legoY,legoA
 void getLego(){
-	getLegoPosition();
-	printf("DEBUG: legoPos[0] = %d, legoPos[1] = %d\n", legoPos[0], legoPos[1]);
-
-    //Get Legos
-    //legoPos = getLegoPosition();
-    //printf("foo[%d] = %d\n", legoPos[0]);
-
+  getLegoPosition();
+  legoX = legoPos[0];
+  legoY = legoPos[1];
+  legoA = atan2(legoY,legoX)-PI/2.0;      
+  ROS_INFO("Lego: x=%f, y=%f, a=%f", legoX,legoY,legoA);
 }
+
 
 //Computes the inverse of tmpArray and stores it in result
 void compInv()
@@ -709,6 +708,18 @@ void goToZero()
   //cmds[0] = 0;
 }
 
+void moveToLego()
+{
+  if(legoY > 0){
+    numCmds=1;
+    cmdTypes[0] = 2;
+    cmds[0] = 0;  
+  }else{
+    numCmds = 1;
+    cmdTypes[0] = 2853;
+  }
+}
+
 void goToZero2()
 {
   numCmds = 2;
@@ -774,7 +785,7 @@ int main(int argc, char** argv)
 
 
     if(numCmds == 0){
-      goToZero();
+      moveToLego();
     }
 
     //If there are no commands to take, do image processing and call high level planning
@@ -844,25 +855,25 @@ int main(int argc, char** argv)
                 numCmds--;
                 resetLastPos();
             }else if(legoA<threshWalk){
-                cmd.linear.y = 3;
+                cmd.linear.y = -3;
             }else{
-                cmd.angular.z = -5;
+                cmd.angular.z = 5;
             }
         }else{
             if(legoA > -thresh){
                 numCmds--;
                 resetLastPos();
             }else if(legoA>-threshWalk){
-                cmd.linear.y =  -3;
+                cmd.linear.y =  3;
             }else{
-                cmd.angular.z = 5;
+                cmd.angular.z = -5;
             } 
         }
         if (legoY > 12 && cmd.angular.z == 0){
-          numCmds++;
-          cmdTypes[numCmds-1] = 0;
-          cmds[numCmds-1] = 10;
+          cmd.linear.x = 5;
         }
+         numCmds++;
+         cmdTypes[numCmds-1] = 12784;
     }else if(cmdTypes[numCmds-1] == 3){//move sideways
         if(cmds[numCmds-1]>0){ //going forward
             if (dist>=cmds[numCmds-1]){ //if has gone far enough
