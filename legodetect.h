@@ -16,18 +16,27 @@
 
 using namespace std;
 
+// hardcode the path to the file to be processed 
+// need the typecast to avoid compiler warning
+//char *imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
+char* imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
+//char* imagefile = (char *) "CamImg8129.jpg";
+
 // the global lego position array
-double *legoPos = (double *) malloc(sizeof(int) * 2);
+double *legoPos = (double *) malloc(sizeof(double) * 2);
 
 // some debugging flags
-int showwindows = 0;
-int debug = 0;
+int showwindows = 1;
+int debug = 1;
 
 // global cv variables
-IplImage* dst =0;
-IplImage* img =0;
-IplImage* temp =0;
-IplImage* frame =0;
+IplImage* dst = 0;
+IplImage* img = 0;
+IplImage* img2 = 0;
+IplImage* temp = 0;
+IplImage* frame = 0;
+IplImage* gsFrame = 0;
+IplImage* finalFrame = 0;
 
 // global structs for the blob code
 struct coordinate {
@@ -139,36 +148,22 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 // returns void, but uses legoPos array
 void toGlobal( int xpixel, int ypixel) {
 	//do math for finding the actual position
-	//int* answerarray = (int *) malloc(sizeof(int) * 2);
 	int f = 600;
 	int yhorz = 220;
 	double hheight = 3.5;
-	//int* answer;
 	double x, y;
 
 	xpixel -= 320;
 	ypixel -= yhorz;
 
-	y = (double)f*hheight/(double)ypixel; //adjust as needed
-	x = (double)y*xpixel/(double)f;
-	//printf("DEBUG: x = %d, y = %d\n", x, y);
-	//answerarray[0] = x;
-	//answerarray[1] = y;
+	y = (double) f*hheight/ (double)ypixel; //adjust as needed
+	x = (double) y*xpixel/ (double)f;
+	if (debug) printf("DEBUG: x = %f, y = %f\n", x, y);
 	
 	legoPos[0] = x;
 	legoPos[1] = y;
-	
-	//something wrong with the pointer idea
-	//answer = &answerarray[0];
-	
-	//return answer;
 }
 
-// hardcode the path to the file to be processed 
-// need the typecast to avoid compiler warning
-char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
-//char* imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
-//char* imagefile = (char *) "CamImg8129.jpg";
 
 // simple print info function
 void printImageInfo( IplImage* image ) {
@@ -181,23 +176,16 @@ void printImageInfo( IplImage* image ) {
 	printf( "Width step:  %d bytes\n",  image->widthStep );
 	printf( "Depth:  %d \n",  			image->depth );
 	printf("----------------------------------\n");
-}
-
-
+} 
 // start "main" program
 void getLegoPosition(void) {
-
 	// prints out the first argument
-	//printf("File to be input is: %s\n", argv[1]);
 	if (debug) printf("File to be input is: %s\n", imagefile);
 
 	// takes in an image file from a hardcoded location
 	img = cvLoadImage( imagefile );
 	
-	// takes in a file from the command line
-	//img = cvLoadImage( imagefile );
-	
-	// create two windows
+	// create three windows
 	if (showwindows) {
 		cvNamedWindow( "image-in" );
 		cvNamedWindow( "image after segmentation" );
@@ -221,7 +209,6 @@ void getLegoPosition(void) {
 
 	// print image info
 	if (debug) printImageInfo( img );
-	
 
 	//copy from img to img2
 	//cvCopy(img, img2, NULL);
@@ -234,9 +221,10 @@ void getLegoPosition(void) {
 	// also, keep in mind that HSV and RGB are two different ways of
 	// representing color
 	// Create an image for the output
-	IplImage* img2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
-	IplImage* dst  = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
-	IplImage* temp = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
+	img2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
+	dst  = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
+	temp = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
+
 	int x, y;
 	for (y=0; y<img2->height; y++) {
 		// compute the pointer directly as the head of the relavant row y
@@ -284,16 +272,14 @@ void getLegoPosition(void) {
 		}
 	}
 
+	// make a convolution kernel
 	// make NULL kernel
 	//IplConvKernel* nullkernel = NULL;
-	int iterations = 1;
-
-	// make a convolution kernel
 	IplConvKernel* kernopen = cvCreateStructuringElementEx(4,4,2,2,CV_SHAPE_ELLIPSE);
 	IplConvKernel* kerndilate = cvCreateStructuringElementEx(2,2,1,1,CV_SHAPE_ELLIPSE);
 
 	// perform dilation which takes the max
-	cvDilate(dst, dst, kerndilate, iterations);
+	cvDilate(dst, dst, kerndilate, 1);
 
 	// apply morphological opening
 	cvMorphologyEx(dst, dst, temp, kernopen, CV_MOP_CLOSE);
@@ -319,20 +305,19 @@ void getLegoPosition(void) {
 			}
 		}
 	}
-	if (debug)
-		printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
+	if (debug) printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
 	//to prevent division by zero
 	if (counter == 0) {
 		counter = 1;
 	}
 	double averagex = (double) sumx / (double) counter;
 	double averagey = (double) sumy / (double) counter;
-	if (debug)
-		printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
+	if (debug) printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
 
 	//use function to return pointer to array of positions
 	//int* foo = toGlobal( (int) averagex, (int) averagey);
 	toGlobal( (int) averagex, (int) averagey);
+
 	if (debug) printf("DEBUG: function return is: %f and %f \n", legoPos[0], legoPos[1]);
 	
 	//save the output image to a file
@@ -342,10 +327,10 @@ void getLegoPosition(void) {
 	//printImageInfo( temp );
 
 	//Show the processed image
-	if (showwindows == 1) {
+	if (showwindows) {
 		cvShowImage("image-out", temp);
 	}
-	//#############################################################
+	//################################begin blob detection#######################
 	// for capturing for a webcam
 	//CvCapture * capture = cvCaptureFromCAM(CV_CAP_ANY);
 	//if(!capture) {
@@ -355,7 +340,7 @@ void getLegoPosition(void) {
 
 	// Create a window in which the captured images will be presented
 	//cvNamedWindow( "Capture", CV_WINDOW_AUTOSIZE );
-	if (showwindows == 1) {
+	if (showwindows) {
 		cvNamedWindow("Capture");
 		cvNamedWindow("Result");
 	}
@@ -363,14 +348,13 @@ void getLegoPosition(void) {
 
 	// Get one frame from the web cam
 	//IplImage* frame = cvQueryFrame(capture);
+	frame = cvLoadImage( imagefile );
 	if(!frame) {
 		fprintf( stderr, "ERROR: frame is null...\n" );
-		IplImage* frame = cvLoadImage( imagefile );
+		frame = cvLoadImage( imagefile );
 	}
-	frame = cvLoadImage( imagefile );
 
-	IplImage* gsFrame;
-	IplImage* finalFrame;
+	// gsFrame and finalFrame are globals defined at the top
 	gsFrame = cvCreateImage(cvSize(frame->width,frame->height), IPL_DEPTH_8U, 1);
 	finalFrame = cvCloneImage(frame);
 
@@ -382,16 +366,19 @@ void getLegoPosition(void) {
 	cvSmooth(finalFrame, finalFrame, CV_BLUR);
 
 	// Detection (with timer for debugging purposes)
-	clock_t start = clock();
-	detectBlobs(gsFrame, finalFrame);
-	clock_t end = clock();
-	cout << end-start << endl;
+	if (debug) {
+		clock_t start = clock();
+		detectBlobs(gsFrame, finalFrame);
+		clock_t end = clock();
+		cout << "DEBUG BLOB: Time taken: " << end-start << endl;
+	}
 
 	// Show images in a nice window
 	if (showwindows) {
 		cvShowImage( "Capture", frame );
 		cvShowImage( "Result", finalFrame );
 	}
+	//#######################end blobs##########################################
 
 	// wait for a key to be pressed
 	if (showwindows) {
@@ -403,19 +390,20 @@ void getLegoPosition(void) {
 		//cvDestroyWindow( "Result" );
 	//}
 
-		//#######################end blobs
-
 	// release the memory
 	cvReleaseImage( &img );
+	cvReleaseImage( &img2 );
 	cvReleaseImage( &dst );
 	cvReleaseImage( &temp );
+	cvReleaseImage( &frame );
 	cvReleaseImage( &gsFrame);
 	cvReleaseImage( &finalFrame);
+	
 	//cvReleaseCapture( &capture );
 	// close windows
 	//cvDestroyWindow( "image-in" );
 	//cvDestroyWindow( "image-out" );
 	
-	//return &foo[0];
+	//printf("DEBUG: WHERE IS THE SEGFAULT?!\n");
 }
 
