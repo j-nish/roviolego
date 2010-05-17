@@ -421,7 +421,10 @@ int main(int argc, char** argv)
 
 
     if(numCmds == 0){
-      backup();
+      
+      if(legoY>0){
+        backup();
+      }
       moveToLego();
     } 
 
@@ -504,7 +507,7 @@ int main(int argc, char** argv)
                 cmd.linear.y =  3;
             } 
         }
-        if (legoY > 10 && cmd.angular.z == 0){
+        if (legoY > 8 && cmd.angular.z == 0){
           cmd.linear.x = 5;
         }else if(legoA<thresh&&legoA>-thresh){
           numCmds--;
