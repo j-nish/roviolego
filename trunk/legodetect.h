@@ -17,7 +17,7 @@
 using namespace std;
 
 // the global lego position array
-int *legoPos = (int *) malloc(sizeof(int) * 2);
+double *legoPos = (int *) malloc(sizeof(int) * 2);
 
 // some debugging flags
 int showwindows = 0;
@@ -134,6 +134,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		}
 	}
 }
+double x, y;
 
 // returns void, but uses legoPos array
 void toGlobal( int xpixel, int ypixel) {
@@ -147,8 +148,8 @@ void toGlobal( int xpixel, int ypixel) {
 	xpixel -= 320;
 	ypixel -= yhorz;
 
-	int y = f*hheight/ypixel; //adjust as needed
-	int x = y*xpixel/f;
+	y = (double)f*hheight/(double)ypixel; //adjust as needed
+	x = (double)y*xpixel/(double)f;
 	//printf("DEBUG: x = %d, y = %d\n", x, y);
 	//answerarray[0] = x;
 	//answerarray[1] = y;
@@ -331,7 +332,7 @@ void getLegoPosition(void) {
 	//use function to return pointer to array of positions
 	//int* foo = toGlobal( (int) averagex, (int) averagey);
 	toGlobal( (int) averagex, (int) averagey);
-	if (debug) printf("DEBUG: function return is: %d and %d \n", legoPos[0], legoPos[1]);
+	if (debug) printf("DEBUG: function return is: %f and %f \n", legoPos[0], legoPos[1]);
 	
 	//save the output image to a file
 	cvSaveImage("outputcv.jpg", temp);
