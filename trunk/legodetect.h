@@ -17,7 +17,7 @@
 using namespace std;
 
 // the global lego position array
-double *legoPos = (int *) malloc(sizeof(int) * 2);
+double *legoPos = (double *) malloc(sizeof(int) * 2);
 
 // some debugging flags
 int showwindows = 0;
