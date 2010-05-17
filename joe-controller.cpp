@@ -95,7 +95,7 @@ void moveLego(double p1x, double p1y, double p2x, double p2y){
 
 // set legoX,legoY,legoA
 void getLego(){
-  legoPos = getLegoPosition();
+  getLegoPosition();
   legoX = legoPos[0];
   legoY = legoPos[1];
   legoA = atan2(legoY,legoX)-PI/2.0;      
@@ -308,7 +308,7 @@ void goToZero()
 {
   numCmds += 2;
   cmdTypes[numCmds-2] = 0;
-  cmds[numCmds-2]     = sqrt(x[0][0]*x[0][0]+x[1][0]*x[1][0])/3.0;
+  cmds[numCmds-2]     = sqrt(x[0][0]*x[0][0]+x[1][0]*x[1][0]);
   cmdTypes[numCmds-1] = 3;
   cmds[numCmds-1]     = 3.0*PI/2.0 + atan2(x[1][0],x[0][0]);
   //if (cmds[0] > 50){
@@ -468,7 +468,7 @@ int main(int argc, char** argv)
                 numCmds--;
                 resetLastPos();
             }else if(angle-cmds[numCmds-1]<threshWalk){
-                cmd.linear.y = 3;
+                cmd.linear.y = 5;
             }else{
                 cmd.angular.z = -5;
             }
@@ -477,7 +477,7 @@ int main(int argc, char** argv)
                 numCmds--;
                 resetLastPos();
             }else if(angle-cmds[numCmds-1]>-threshWalk){
-                cmd.linear.y =  -3;
+                cmd.linear.y =  -5;
             }else{
                 cmd.angular.z = 5;
             } 
@@ -504,10 +504,10 @@ int main(int argc, char** argv)
             if(legoA > -thresh/2.0){
 
             }else{
-                cmd.linear.y =  3;
+                cmd.linear.y =  5;
             } 
         }
-        if (legoY > 8 && cmd.angular.z == 0){
+        if (legoY > 8 && cmd.linear.y == 0){
           cmd.linear.x = 5;
         }else if(legoA<thresh&&legoA>-thresh){
           numCmds--;
@@ -527,14 +527,14 @@ int main(int argc, char** argv)
                 numCmds--;
                 resetLastPos();
             }else{
-                cmd.linear.y = 3;
+                cmd.linear.y = 5;
             }
         }else{
             if(angle-cmds[numCmds-1] > -thresh){
                 numCmds--;
                 resetLastPos();
             }else{
-                cmd.linear.y =  -3;
+                cmd.linear.y =  -5;
             } 
         }
         numCmds++;
@@ -563,3 +563,4 @@ ROS_INFO("Bot cmd x=%f y=%f z=%f",cmd.linear.x,cmd.linear.y,cmd.angular.z);
     }
 
   }
+}
