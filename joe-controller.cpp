@@ -53,7 +53,9 @@ double P[3][3] = {{10.10, 0.01, 0.01},
 double x[3][1] = {{0.0},{0.0},{0.0}};
 
 double result[3][3],tmpArray[3][3],tmpArray1[3][3],tmpArray2[3][3];
-double resultRow[3][1],tmpRow[3][1],tmpRow1[3][1],tmpRow2[3][1],xP[3][1],wA,legoX,legoY,legoA,legoXL,legoYL;
+double resultRow[3][1],tmpRow[3][1],tmpRow1[3][1],tmpRow2[3][1],xP[3][1],wA,legoX,legoY,legoA;
+double legoYL1 = 0;
+double legoYL2 = 0;
 double angles[10] = {0,0,0,0,0,0,0,0,0,0};
 int countA = 0;
 
@@ -95,6 +97,8 @@ void moveLego(double p1x, double p1y, double p2x, double p2y){
 
 // set legoX,legoY,legoA
 void getLego(){
+  legoYL2 = legoYL1;
+  legoYL1 = legoY;
   getLegoPosition();
   legoX = legoPos[0];
   legoY = legoPos[1];
@@ -308,7 +312,7 @@ void goToZero()
 {
   numCmds += 2;
   cmdTypes[numCmds-2] = 0;
-  cmds[numCmds-2]     = sqrt(x[0][0]*x[0][0]+x[1][0]*x[1][0]);
+  cmds[numCmds-2]     = sqrt(x[0][0]*x[0][0]+x[1][0]*x[1][0])/1.5;
   cmdTypes[numCmds-1] = 3;
   cmds[numCmds-1]     = 3.0*PI/2.0 + atan2(x[1][0],x[0][0]);
   //if (cmds[0] > 50){
@@ -337,6 +341,10 @@ void moveToLego()
 void search()
 { 
   if(legoY<0){
+  numCmds++;
+  cmdTypes[numCmds-1] = 2345;
+  numCmds++;
+  cmdTypes[numCmds-1] = 2345;
   numCmds++;
   cmdTypes[numCmds-1] = 4;
   }
@@ -421,15 +429,15 @@ int main(int argc, char** argv)
 
 
     if(numCmds == 0){
-      
+      numCmds++;
+      cmdTypes[numCmds-1] = 4;
       if(legoY>0){
-        backup();
+        moveToLego();
       }
-      moveToLego();
     } 
 
-    //If there are no commands to take, do image processing and call high level planning
-    if (numCmds <= 0 || cmdTypes[numCmds-1] == 20000){
+    //If there are no commands to take, end.
+    if (numCmds <= 0){
       done = 1;
     }
 
@@ -468,7 +476,7 @@ int main(int argc, char** argv)
                 numCmds--;
                 resetLastPos();
             }else if(angle-cmds[numCmds-1]<threshWalk){
-                cmd.linear.y = 5;
+                cmd.linear.y = 3;
             }else{
                 cmd.angular.z = -5;
             }
@@ -477,7 +485,7 @@ int main(int argc, char** argv)
                 numCmds--;
                 resetLastPos();
             }else if(angle-cmds[numCmds-1]>-threshWalk){
-                cmd.linear.y =  -5;
+                cmd.linear.y =  -3;
             }else{
                 cmd.angular.z = 5;
             } 
@@ -485,9 +493,6 @@ int main(int argc, char** argv)
         numCmds++;
         cmdTypes[numCmds-1] = 2340; 
     }else if(cmdTypes[numCmds-1] == 2){// move towards lego
-        //double legoXG = x[0][0]+legoX;
-        //double legoYG = x[1][0]+legoY;
-        //double toZero = sqrt(legoXG*legoXG+legoYG*legoYG);
 
         if(cmds[numCmds-1] > PI){
             cmds[numCmds-1] -= 2.0*PI;
@@ -498,24 +503,31 @@ int main(int argc, char** argv)
             if(legoA<thresh/2.0){
 
             }else{
-                cmd.angular.z = 5;
+                cmd.linear.y = -3;
             }
         }else{
             if(legoA > -thresh/2.0){
 
             }else{
-                cmd.linear.y =  5;
+                cmd.linear.y =  3;
             } 
         }
-        if (legoY > 8 && cmd.linear.y == 0){
-          cmd.linear.x = 5;
-        }else if(legoA<thresh&&legoA>-thresh){
+        if (legoY > 8){
+          if(cmd.linear.y==0){
+            cmd.linear.x = 5;
+          }else{
+            numCmds++;
+            cmdTypes[numCmds-1] = 12784;
+          }
+        }else if(legoYL1>0 || legoYL2>0){
           numCmds--;
           resetLastPos();
+          backup();
           goToZero();
+        }else{
+          numCmds--;
+          resetLastPos();
         }  
-         numCmds++;
-         cmdTypes[numCmds-1] = 12784;
     }else if(cmdTypes[numCmds-1] == 3){//rotate around to a certain angle
         if(cmds[numCmds-1] > PI){
             cmds[numCmds-1] -= 2.0*PI;
@@ -527,14 +539,14 @@ int main(int argc, char** argv)
                 numCmds--;
                 resetLastPos();
             }else{
-                cmd.linear.y = 5;
+                cmd.linear.y = 3;
             }
         }else{
             if(angle-cmds[numCmds-1] > -thresh){
                 numCmds--;
                 resetLastPos();
             }else{
-                cmd.linear.y =  -5;
+                cmd.linear.y =  -3;
             } 
         }
         numCmds++;
@@ -544,6 +556,7 @@ int main(int argc, char** argv)
        cmdTypes[numCmds-1] = 2340;
        numCmds++;
        cmdTypes[numCmds-1] = 2340; 
+       resetLastPos();
     }else{
          numCmds--;
     }
@@ -563,4 +576,4 @@ ROS_INFO("Bot cmd x=%f y=%f z=%f",cmd.linear.x,cmd.linear.y,cmd.angular.z);
     }
 
   }
-}
+  //#####################################################################################################}
