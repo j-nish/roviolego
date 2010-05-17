@@ -27,6 +27,7 @@ int debug = 0;
 IplImage* dst =0;
 IplImage* img =0;
 IplImage* temp =0;
+IplImage* frame =0;
 
 // global structs for the blob code
 struct coordinate {
@@ -165,8 +166,8 @@ void toGlobal( int xpixel, int ypixel) {
 
 // hardcode the path to the file to be processed 
 // need the typecast to avoid compiler warning
-//char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
-char* imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
+char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
+//char* imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
 //char* imagefile = (char *) "CamImg8129.jpg";
 
 // simple print info function
@@ -366,7 +367,7 @@ void getLegoPosition(void) {
 		fprintf( stderr, "ERROR: frame is null...\n" );
 		IplImage* frame = cvLoadImage( imagefile );
 	}
-	IplImage* frame = cvLoadImage( imagefile );
+	frame = cvLoadImage( imagefile );
 
 	IplImage* gsFrame;
 	IplImage* finalFrame;
