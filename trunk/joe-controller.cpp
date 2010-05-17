@@ -95,7 +95,7 @@ void moveLego(double p1x, double p1y, double p2x, double p2y){
 
 // set legoX,legoY,legoA
 void getLego(){
-  getLegoPosition();
+  legoPos = getLegoPosition();
   legoX = legoPos[0];
   legoY = legoPos[1];
   legoA = atan2(legoY,legoX)-PI/2.0;      
@@ -563,4 +563,3 @@ ROS_INFO("Bot cmd x=%f y=%f z=%f",cmd.linear.x,cmd.linear.y,cmd.angular.z);
     }
 
   }
-  //#####################################################################################################}
