@@ -362,11 +362,11 @@ void getLegoPosition(void) {
 
 	// Get one frame from the web cam
 	//IplImage* frame = cvQueryFrame(capture);
-	IplImage* frame = cvLoadImage( imagefile );
 	if(!frame) {
 		fprintf( stderr, "ERROR: frame is null...\n" );
-		//getchar();
+		IplImage* frame = cvLoadImage( imagefile );
 	}
+	IplImage* frame = cvLoadImage( imagefile );
 
 	IplImage* gsFrame;
 	IplImage* finalFrame;
