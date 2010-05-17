@@ -134,7 +134,6 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		}
 	}
 }
-double x, y;
 
 // returns void, but uses legoPos array
 void toGlobal( int xpixel, int ypixel) {
@@ -144,6 +143,7 @@ void toGlobal( int xpixel, int ypixel) {
 	int yhorz = 220;
 	double hheight = 3.5;
 	//int* answer;
+	double x, y;
 
 	xpixel -= 320;
 	ypixel -= yhorz;
