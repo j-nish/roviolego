@@ -56,7 +56,7 @@ double P[3][3] = {{10.10, 0.01, 0.01},
 double x[3][1] = {{0.0},{0.0},{0.0}};
 
 double result[3][3],tmpArray[3][3],tmpArray1[3][3],tmpArray2[3][3];
-double resultRow[3][1],tmpRow[3][1],tmpRow1[3][1],tmpRow2[3][1],xP[3][1],wA,legoX,legoY,legoA;
+double resultRow[3][1],tmpRow[3][1],tmpRow1[3][1],tmpRow2[3][1],xP[3][1],wA,legoX,legoY,legoA,legoXL,legoYL;
 double angles[10] = {0,0,0,0,0,0,0,0,0,0};
 int countA = 0;
 
@@ -717,7 +717,15 @@ void moveToLego()
     cmds[numCmds-1] = 0;  
   }else{
     numCmds++;
-    cmdTypes[numCmds-1] = 2853;
+    cmdTypes[numCmds-1] = 4;
+  }
+}
+
+void search()
+{ 
+  if(legoY<0){
+  numCmds++;
+  cmdTypes[numCmds-1] = 4;
   }
 }
 
@@ -726,6 +734,13 @@ void backup()
   numCmds++;
   cmdTypes[numCmds-1] = 0;
   cmds[numCmds-1] = -25;
+}
+
+void rotate(double a)
+{
+  numCmds++;
+  cmdTypes[numCmds-1] = 1;
+  cmds[numCmds-1] = a;
 }
 
 void goToZero2()
@@ -795,7 +810,7 @@ int main(int argc, char** argv)
     if(numCmds == 0){
       backup();
       moveToLego();
-    }
+    } 
 
     //If there are no commands to take, do image processing and call high level planning
     if (numCmds <= 0 || cmdTypes[numCmds-1] == 20000){
@@ -854,6 +869,10 @@ int main(int argc, char** argv)
         numCmds++;
         cmdTypes[numCmds-1] = 2340; 
     }else if(cmdTypes[numCmds-1] == 2){// move towards lego
+        //double legoXG = x[0][0]+legoX;
+        //double legoYG = x[1][0]+legoY;
+        //double toZero = sqrt(legoXG*legoXG+legoYG*legoYG);
+
         if(cmds[numCmds-1] > PI){
             cmds[numCmds-1] -= 2.0*PI;
         }else if(cmds[numCmds-1] < - PI){
@@ -904,6 +923,11 @@ int main(int argc, char** argv)
         }
         numCmds++;
         cmdTypes[numCmds-1] = 2340; 
+    }else if(cmdTypes[numCmds-1] == 4){//rotate just a little
+       cmd.angular.z =  -3;
+       cmdTypes[numCmds-1] = 2340;
+       numCmds++;
+       cmdTypes[numCmds-1] = 2340; 
     }else{
          numCmds--;
     }
