@@ -164,7 +164,8 @@ void toGlobal( int xpixel, int ypixel) {
 
 // hardcode the path to the file to be processed 
 // need the typecast to avoid compiler warning
-char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
+//char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
+char* imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
 //char* imagefile = (char *) "CamImg8129.jpg";
 
 // simple print info function
