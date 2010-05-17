@@ -16,6 +16,10 @@
 
 using namespace std;
 
+// the global lego position array
+int *legoPos = (int *) malloc(sizeof(int) * 2);
+
+// some debugging flags
 int showwindows = 0;
 int debug = 0;
 
@@ -66,7 +70,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		}
 	}
 
-	/* Check lineBlobs for a touching lineblob on the next row */
+	// Check lineBlobs for a touching lineblob on the next row
 	for(int row = 0; row < (int) imgData.size(); ++row) {
 		for(int entryLine1 = 0; entryLine1 < (int) imgData[row].size(); ++entryLine1) {
 			for(int entryLine2 = 0; entryLine2 < (int) imgData[row+1].size(); ++entryLine2) {
@@ -131,15 +135,14 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 	}
 }
 
-// returns a pointer to an array
-int* toGlobal( int xpixel, int ypixel) {
+// returns void, but uses legoPos array
+void toGlobal( int xpixel, int ypixel) {
 	//do math for finding the actual position
-	int* answerarray = (int *) malloc(sizeof(int) * 2);
-	//int answerarray[2];
+	//int* answerarray = (int *) malloc(sizeof(int) * 2);
 	int f = 600;
 	int yhorz = 220;
 	double hheight = 3.5;
-	int* answer;
+	//int* answer;
 
 	xpixel -= 320;
 	ypixel -= yhorz;
@@ -147,21 +150,26 @@ int* toGlobal( int xpixel, int ypixel) {
 	int y = f*hheight/ypixel; //adjust as needed
 	int x = y*xpixel/f;
 	//printf("DEBUG: x = %d, y = %d\n", x, y);
-	answerarray[0] = x;
-	answerarray[1] = y;
+	//answerarray[0] = x;
+	//answerarray[1] = y;
+	
+	legoPos[0] = x;
+	legoPos[1] = y;
 	
 	//something wrong with the pointer idea
-	answer = &answerarray[0];
+	//answer = &answerarray[0];
 	
-	return answer;
+	//return answer;
 }
+
+// hardcode the path to the file to be processed 
+// need the typecast to avoid compiler warning
+char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
+//char* imagefile = (char *) "CamImg8129.jpg";
 
 // simple print info function
 void printImageInfo( IplImage* image ) {
-	//print some properties
-	//see struct information for IplImage* for more info
 	printf("--------printing image info-------\n");
-	//printf( "Filename:    %s\n",        argv[1] );
 	printf( "# of channels:  %d\n",     image->nChannels );
 	printf( "Pixel depth: %d bits\n",   image->depth );
 	printf( "width:       %d pixels\n", image->width );
@@ -174,36 +182,31 @@ void printImageInfo( IplImage* image ) {
 
 
 // start "main" program
-int* getLegoPosition(void) {
-	//hardcode the path to the file to be processed 
-	//need the typecast to avoid compiler warning
-	char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
-	//char* imagefile = (char *) "CamImg8129.jpg";
+void getLegoPosition(void) {
 
-	//prints out the first argument
+	// prints out the first argument
 	//printf("File to be input is: %s\n", argv[1]);
 	if (debug) printf("File to be input is: %s\n", imagefile);
 
-	//takes in an image file from a hardcoded location
-	//IplImage* img = cvLoadImage( "lena.jpg" );
+	// takes in an image file from a hardcoded location
 	img = cvLoadImage( imagefile );
 	
-	//takes in a file from the command line
+	// takes in a file from the command line
 	//img = cvLoadImage( imagefile );
 	
-	//create two windows
-	if (showwindows == 1) {
+	// create two windows
+	if (showwindows) {
 		cvNamedWindow( "image-in" );
 		cvNamedWindow( "image after segmentation" );
 		cvNamedWindow( "image-out" );
 	}
 
-	//Show the original image
-	if (showwindows == 1) {
+	// Show the original image
+	if (showwindows) {
 		cvShowImage("image-in", img);
 	}
 
-	//set the rectangle for cropping
+	// set the rectangle for cropping
 	//int new_width = 	200;
 	//int new_height = 	200;
 	//CvRect rect = cvRect(2, 2, new_width, new_height);
@@ -213,28 +216,27 @@ int* getLegoPosition(void) {
 	//copy cropped image into cropped
 	//cvCopy(img, cropped, NULL);
 
-	//print image info
-	if (debug)
-		printImageInfo( img );
+	// print image info
+	if (debug) printImageInfo( img );
 	
-	// Create an image for the output
-	IplImage* img2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
-	IplImage* dst  = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
-	IplImage* temp = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
 
 	//copy from img to img2
 	//cvCopy(img, img2, NULL);
 	
-	//access image data
-	//there are other ways to do this, but this seemed to be the simplest
-	//it is also said to be computationally fastest
-	//this double for loop changes all the pixel values to red
-	//notice that there are 3 channels
-	//also, keep in mind that HSV and RGB are two different ways of
-	//representing color
+	// access image data
+	// there are other ways to do this, but this seemed to be the simplest
+	// it is also said to be computationally fastest
+	// this double for loop changes all the pixel values to red
+	// notice that there are 3 channels
+	// also, keep in mind that HSV and RGB are two different ways of
+	// representing color
+	// Create an image for the output
+	IplImage* img2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
+	IplImage* dst  = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
+	IplImage* temp = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
 	int x, y;
 	for (y=0; y<img2->height; y++) {
-		//compute the pointer directly as the head of the relavant row y
+		// compute the pointer directly as the head of the relavant row y
 		uchar* ptr = (uchar*) (img2->imageData + y * img2->widthStep);
 		for (x=0; x<img2->width; x++) {
 			ptr[3*x+1] = 40;		//setting the "H"-hue, or yellow
@@ -242,25 +244,25 @@ int* getLegoPosition(void) {
 			ptr[3*x+3] = 27;		//setting the "V"-value, or blue
 		}
 	}
-	//Perform a Gaussian blur
+	// Perform a Gaussian blur
 	//cvSmooth( img, out, CV_GAUSSIAN, 11, 11 );
 	
-	//subtract the original image from the
+	// subtract the original image from the
 	cvAbsDiff(img, img2, img2);
 
-	//threshold the dst image
+	// threshold the dst image
 	cvThreshold(img2, dst, 50.0, 255, CV_THRESH_BINARY);
 	
 	if (showwindows == 1) {
 		cvShowImage("image after segmentation", dst);
 	}
 
-	//after segmenting, allow only the "all 3 channels at 255" to remain
+	// after segmenting, allow only the "all 3 channels at 255" to remain
 	for (y=0; y<dst->height; y++) {
-		//compute the pointer directly as the head of the relavant row y
+		// compute the pointer directly as the head of the relavant row y
 		uchar* data = (uchar*) (dst->imageData + y * dst->widthStep);
 		for (x=0; x<dst->width; x++) {
-			//the "black" parts should be converted to 255 and the rest should be set to 0
+			// the "black" parts should be converted to 255 and the rest should be set to 0
 			if (data[3*x+1]!=0 || data[3*x+2]!=0 || data[3*x+3]!=0) {
 				data[3*x+1] = 0;	
 				data[3*x+2] = 0;
@@ -270,7 +272,7 @@ int* getLegoPosition(void) {
 				data[3*x+2] = 255;
 				data[3*x+3] = 255;
 			}
-
+			// set top half of the image to zero
 			if(y<dst->height/2) {
 				data[3*x+1] = 0;	
 				data[3*x+2] = 0;
@@ -279,30 +281,30 @@ int* getLegoPosition(void) {
 		}
 	}
 
-	//make NULL kernel
+	// make NULL kernel
 	//IplConvKernel* nullkernel = NULL;
 	int iterations = 1;
 
-	//make a convolution kernel
+	// make a convolution kernel
 	IplConvKernel* kernopen = cvCreateStructuringElementEx(4,4,2,2,CV_SHAPE_ELLIPSE);
 	IplConvKernel* kerndilate = cvCreateStructuringElementEx(2,2,1,1,CV_SHAPE_ELLIPSE);
 
-	//perform dilation which takes the max
+	// perform dilation which takes the max
 	cvDilate(dst, dst, kerndilate, iterations);
 
-	//apply morphological opening
+	// apply morphological opening
 	cvMorphologyEx(dst, dst, temp, kernopen, CV_MOP_CLOSE);
 
-	//convert to greyscale (1channel) destination must be 1 channel
+	// convert to greyscale (1channel) destination must be 1 channel
 	cvCvtColor(dst, temp, CV_RGB2GRAY);
 
-	//find the mean location of all the pixels
+	// find the mean location of all the pixels
 	int sumx = 0;
 	int sumy = 0;
 	int counter = 0;
-	//count up the number of pixels and their x-y pixel coordinates
+	// count up the number of pixels and their x-y pixel coordinates
 	for (y=0; y<dst->height; y++) {
-		//compute the pointer directly as the head of the relavant row y
+		// compute the pointer directly as the head of the relevant row y
 		uchar* temp = (uchar*) (dst->imageData + y * dst->widthStep);
 		for (x=0; x<dst->width; x++) {
 			if (temp[3*x+1] == 255) {
@@ -314,7 +316,6 @@ int* getLegoPosition(void) {
 			}
 		}
 	}
-	//debug
 	if (debug)
 		printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
 	//to prevent division by zero
@@ -324,12 +325,12 @@ int* getLegoPosition(void) {
 	double averagex = (double) sumx / (double) counter;
 	double averagey = (double) sumy / (double) counter;
 	if (debug)
-	printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
+		printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
 
 	//use function to return pointer to array of positions
-	int* foo = toGlobal( (int) averagex, (int) averagey);
-	if (debug)
-	printf("DEBUG: function return is: %d and %d \n", foo[0], foo[1]);
+	//int* foo = toGlobal( (int) averagex, (int) averagey);
+	toGlobal( (int) averagex, (int) averagey);
+	if (debug) printf("DEBUG: function return is: %d and %d \n", legoPos[0], legoPos[1]);
 	
 	//save the output image to a file
 	cvSaveImage("outputcv.jpg", temp);
@@ -362,7 +363,7 @@ int* getLegoPosition(void) {
 	IplImage* frame = cvLoadImage( imagefile );
 	if(!frame) {
 		fprintf( stderr, "ERROR: frame is null...\n" );
-		getchar();
+		//getchar();
 	}
 
 	IplImage* gsFrame;
@@ -384,13 +385,13 @@ int* getLegoPosition(void) {
 	cout << end-start << endl;
 
 	// Show images in a nice window
-	if (showwindows == 1) {
+	if (showwindows) {
 		cvShowImage( "Capture", frame );
 		cvShowImage( "Result", finalFrame );
 	}
 
-	//wait for a key to be pressed
-	if (showwindows == 1) {
+	// wait for a key to be pressed
+	if (showwindows) {
 		cvWaitKey(0);
 	}
 
@@ -401,17 +402,17 @@ int* getLegoPosition(void) {
 
 		//#######################end blobs
 
-	//release the memory
+	// release the memory
 	cvReleaseImage( &img );
 	cvReleaseImage( &dst );
 	cvReleaseImage( &temp );
 	cvReleaseImage( &gsFrame);
 	cvReleaseImage( &finalFrame);
 	//cvReleaseCapture( &capture );
-	//close windows
+	// close windows
 	//cvDestroyWindow( "image-in" );
 	//cvDestroyWindow( "image-out" );
 	
-	return &foo[0];
+	//return &foo[0];
 }
 
