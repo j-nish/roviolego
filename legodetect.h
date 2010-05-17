@@ -26,8 +26,8 @@ char* imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
 double *legoPos = (double *) malloc(sizeof(double) * 2);
 
 // some debugging flags
-int showwindows = 1;
-int debug = 1;
+int showwindows = 0;
+int debug = 0;
 
 // global cv variables
 IplImage* dst = 0;
