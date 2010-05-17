@@ -2,14 +2,12 @@
 #ifdef _CH_
 #pragma package <opencv>
 #endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <cv.h>
+#include <cv.h>			// for cv
 #include <highgui.h>
-//for blob code
-#include <iostream>
+#include <iostream>		// for blob code
 #include <fstream>
 #include <string>
 #include <vector>
@@ -17,19 +15,16 @@
 #include <ctime>
 
 using namespace std;
-using namespace cv;
 
-#define TRUE 1
+int showwindows = 0;
+int debug = 0;
 
+// global cv variables
 IplImage* dst =0;
 IplImage* img =0;
 IplImage* temp =0;
 
-//need to prototype this in a header file
-void printImageInfo( IplImage* image);
-int* toGlobal( int xpixel, int ypixel);
-
-// for the blob code
+// global structs for the blob code
 struct coordinate {
 	unsigned int x, y;
 	void * data;
@@ -94,7 +89,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		for(int entry = 0; entry < (int) imgData[row].size(); ++entry) {
 			if(blobs.find(imgData[row][entry].blobId) == blobs.end()) // Blob does not exist yet
 			{
-				blob blobData = {{imgData[row][entry].min, row}, {imgData[row][entry].max, row}, {0,0}};
+				blob blobData = {{imgData[row][entry].min, row, 0}, {imgData[row][entry].max, row, 0}, {0,0,0}};
 				blobs[imgData[row][entry].blobId] = blobData;
 			}
 			else {
@@ -136,9 +131,50 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 	}
 }
 
-//start "main" program
-void getLegoPosition(void) {
-	int showwindows = TRUE;
+// returns a pointer to an array
+int* toGlobal( int xpixel, int ypixel) {
+	//do math for finding the actual position
+	int* answerarray = (int *) malloc(sizeof(int) * 2);
+	//int answerarray[2];
+	int f = 600;
+	int yhorz = 220;
+	double hheight = 3.5;
+	int* answer;
+
+	xpixel -= 320;
+	ypixel -= yhorz;
+
+	int y = f*hheight/ypixel; //adjust as needed
+	int x = y*xpixel/f;
+	//printf("DEBUG: x = %d, y = %d\n", x, y);
+	answerarray[0] = x;
+	answerarray[1] = y;
+	
+	//something wrong with the pointer idea
+	answer = &answerarray[0];
+	
+	return answer;
+}
+
+// simple print info function
+void printImageInfo( IplImage* image ) {
+	//print some properties
+	//see struct information for IplImage* for more info
+	printf("--------printing image info-------\n");
+	//printf( "Filename:    %s\n",        argv[1] );
+	printf( "# of channels:  %d\n",     image->nChannels );
+	printf( "Pixel depth: %d bits\n",   image->depth );
+	printf( "width:       %d pixels\n", image->width );
+	printf( "height:      %d pixels\n", image->height );
+	printf( "Image size:  %d bytes\n",  image->imageSize );
+	printf( "Width step:  %d bytes\n",  image->widthStep );
+	printf( "Depth:  %d \n",  			image->depth );
+	printf("----------------------------------\n");
+}
+
+
+// start "main" program
+int* getLegoPosition(void) {
 	//hardcode the path to the file to be processed 
 	//need the typecast to avoid compiler warning
 	char* imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
@@ -146,7 +182,7 @@ void getLegoPosition(void) {
 
 	//prints out the first argument
 	//printf("File to be input is: %s\n", argv[1]);
-	printf("File to be input is: %s\n", imagefile);
+	if (debug) printf("File to be input is: %s\n", imagefile);
 
 	//takes in an image file from a hardcoded location
 	//IplImage* img = cvLoadImage( "lena.jpg" );
@@ -178,7 +214,8 @@ void getLegoPosition(void) {
 	//cvCopy(img, cropped, NULL);
 
 	//print image info
-	printImageInfo( img );
+	if (debug)
+		printImageInfo( img );
 	
 	// Create an image for the output
 	IplImage* img2 = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 3 );
@@ -278,17 +315,20 @@ void getLegoPosition(void) {
 		}
 	}
 	//debug
-	printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
+	if (debug)
+		printf("DEBUG: sumx = %d, sumy = %d, counter = %d\n", sumx, sumy, counter);
 	//to prevent division by zero
 	if (counter == 0) {
 		counter = 1;
 	}
 	double averagex = (double) sumx / (double) counter;
 	double averagey = (double) sumy / (double) counter;
+	if (debug)
 	printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
 
 	//use function to return pointer to array of positions
 	int* foo = toGlobal( (int) averagex, (int) averagey);
+	if (debug)
 	printf("DEBUG: function return is: %d and %d \n", foo[0], foo[1]);
 	
 	//save the output image to a file
@@ -371,44 +411,7 @@ void getLegoPosition(void) {
 	//close windows
 	//cvDestroyWindow( "image-in" );
 	//cvDestroyWindow( "image-out" );
+	
+	return &foo[0];
 }
 
-void printImageInfo( IplImage* image ) {
-	//print some properties
-	//see struct information for IplImage* for more info
-	
-	printf("--------printing image info-------\n");
-	//printf( "Filename:    %s\n",        argv[1] );
-	printf( "# of channels:  %d\n",     image->nChannels );
-	printf( "Pixel depth: %d bits\n",   image->depth );
-	printf( "width:       %d pixels\n", image->width );
-	printf( "height:      %d pixels\n", image->height );
-	printf( "Image size:  %d bytes\n",  image->imageSize );
-	printf( "Width step:  %d bytes\n",  image->widthStep );
-	printf( "Depth:  %d \n",  			image->depth );
-	printf("----------------------------------\n");
-}
-
-int* toGlobal( int xpixel, int ypixel) {
-	//do math for finding the actual position
-	int* answerarray = (int *) malloc(sizeof(int) * 2);
-	//int answerarray[2];
-	int f = 600;
-	int yhorz = 220;
-	double hheight = 3.5;
-	int* answer;
-
-	xpixel -= 320;
-	ypixel -= yhorz;
-
-	int y = f*hheight/ypixel; //adjust as needed
-	int x = y*xpixel/f;
-	//printf("DEBUG: x = %d, y = %d\n", x, y);
-	answerarray[0] = x;
-	answerarray[1] = y;
-	
-	//something wrong with the pointer idea
-	answer = &answerarray[0];
-	
-	return answer;
-}
