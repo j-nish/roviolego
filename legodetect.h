@@ -140,7 +140,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		if (debug) printf("DEBUG detectBlobs: size is: %d\n", size);
 
 		// Print coordinates on image, if it is large enough
-		if(size > 30 and size < 100) {
+		if(size > 30 && size < 400) {
 			CvFont font;
 			cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 			char textBuffer[128];
