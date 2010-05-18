@@ -27,11 +27,10 @@ double *legoPos = (double *) malloc(sizeof(double) * 2);
 
 // arrays for colors (BRG)
 int red[3] = {40,196,27};
-int green[3] = {63,2,32};
-int yellow[3] = {93,255,243};
-
-int color[3];
-
+int green[3] = {70,40,127};
+int yellow[3] = {205,245,47}; //works
+int blue[3] = {182,56,28};
+int orange[3] = {155,226,63};
 
 // some debugging flags
 int showwindows = 0;
@@ -66,7 +65,6 @@ struct blob {
 
 // function that does the actual blob detection
 void detectBlobs(IplImage* frame, IplImage* finalFrame) {
-memcpy( color, yellow, sizeof(int)*3);
 	int blobCounter = 0;
 	map<unsigned int, blob> blobs;
 
@@ -248,9 +246,9 @@ void getLegoPosition(void) {
 		// compute the pointer directly as the head of the relavant row y
 		uchar* ptr = (uchar*) (img2->imageData + y * img2->widthStep);
 		for (x=0; x<img2->width; x++) {
-			ptr[3*x+1] = color[0];		//setting the "H"-hue, or yellow
-			ptr[3*x+2] = color[1];		//setting the "S"-saturation, or red
-			ptr[3*x+3] = color[2];		//setting the "V"-value, or blue
+			ptr[3*x+1] = yellow[0];		//setting the "H"-hue, or yellow
+			ptr[3*x+2] = yellow[1];		//setting the "S"-saturation, or red
+			ptr[3*x+3] = yellow[2];		//setting the "V"-value, or blue
 		}
 	}
 	// Perform a Gaussian blur
