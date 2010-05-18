@@ -140,7 +140,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		if (debug) printf("DEBUG detectBlobs: size is: %d\n", size);
 
 		// Print coordinates on image, if it is large enough
-		if(size > 30) {
+		if(size > 30 and size < 100) {
 			CvFont font;
 			cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 			char textBuffer[128];
@@ -210,7 +210,17 @@ void getLegoPosition(void) {
 	if (debug) printf("File to be input is: %s\n", imagefile);
 
 	// takes in an image file from a hardcoded location
-	img = cvLoadImage( imagefile );
+		//img = cvLoadImage( imagefile );
+	//img = NULL;
+	
+	while (1) {
+		img = cvLoadImage( imagefile );
+		if (!img) {
+			printf("Uh oh, bad image!\n");
+		} else {
+			break;
+		}
+	}
 	
 	// create three windows
 	if (showwindows) {
