@@ -137,7 +137,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		(*i).second.center.y = (*i).second.min.y + ((*i).second.max.y - (*i).second.min.y) / 2;
 
 		int size = ((*i).second.max.x - (*i).second.min.x) * ((*i).second.max.y - (*i).second.min.y);
-		printf("DEBUG detectBlobs: size is: %d\n", size);
+		if (debug) printf("DEBUG detectBlobs: size is: %d\n", size);
 
 		// Print coordinates on image, if it is large enough
 		if(size > 30) {
@@ -377,9 +377,7 @@ void getLegoPosition(void) {
 		clock_t start = clock();
 		detectBlobs(gsFrame, finalFrame);
 		clock_t end = clock();
-		if (debug) {
-			cout << "DEBUG BLOB: Time taken: " << end-start << endl;
-		}
+		if (debug) cout << "DEBUG BLOB: Time taken: " << end-start << endl;
 	
 	// this is where legoPos is set
 	toGlobal( pixelx, pixely);
