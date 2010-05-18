@@ -19,15 +19,19 @@ using namespace std;
 // hardcode the path to the file to be processed 
 // need the typecast to avoid compiler warning
 //char *imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
-char *imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
-//char* imagefile = (char *) "CamImg8129.jpg";
+//char *imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
+char* imagefile = (char *) "CamImg8129.jpg";
 
 // the global lego position array
 double *legoPos = (double *) malloc(sizeof(double) * 2);
 
+// arrays for colors (BRG)
+int red[3] = {40,196,27};
+int green[3] = {63,2,32};
+
 // some debugging flags
-int showwindows = 1;
-int debug = 1;
+int showwindows = 0;
+int debug = 0;
 
 // global cv variables
 IplImage* dst = 0;
@@ -234,13 +238,14 @@ void getLegoPosition(void) {
 	temp = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
 
 	int x, y;
+	// create the solid color image to subtract with
 	for (y=0; y<img2->height; y++) {
 		// compute the pointer directly as the head of the relavant row y
 		uchar* ptr = (uchar*) (img2->imageData + y * img2->widthStep);
 		for (x=0; x<img2->width; x++) {
-			ptr[3*x+1] = 40;		//setting the "H"-hue, or yellow
-			ptr[3*x+2] = 196;		//setting the "S"-saturation, or red
-			ptr[3*x+3] = 27;		//setting the "V"-value, or blue
+			ptr[3*x+1] = green[0];		//setting the "H"-hue, or yellow
+			ptr[3*x+2] = green[1];		//setting the "S"-saturation, or red
+			ptr[3*x+3] = green[2];		//setting the "V"-value, or blue
 		}
 	}
 	// Perform a Gaussian blur
