@@ -152,8 +152,6 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 			cvPutText(finalFrame, textBuffer, cvPoint((*i).second.center.x + 5, (*i).second.center.y - 5), &font, cvScalar(0, 0, 153));
 			cvRectangle(finalFrame, cvPoint((*i).second.min.x, (*i).second.min.y), cvPoint((*i).second.max.x, (*i).second.max.y), cvScalar(0, 0, 153), 1);
 
-			//legoPos[0] = (*i).second.center.x;
-			//legoPos[1] = (*i).second.center.y;
 			pixelx = (*i).second.center.x;
 			pixely = (*i).second.center.y;
 			printf("DEBUG PIXELX: is %d and %d\n", pixelx, pixely);
@@ -256,9 +254,9 @@ void getLegoPosition(void) {
 		// compute the pointer directly as the head of the relavant row y
 		uchar* ptr = (uchar*) (img2->imageData + y * img2->widthStep);
 		for (x=0; x<img2->width; x++) {
-			ptr[3*x+1] = yellow[0];		//setting the "H"-hue, or yellow
-			ptr[3*x+2] = yellow[1];		//setting the "S"-saturation, or red
-			ptr[3*x+3] = yellow[2];		//setting the "V"-value, or blue
+			ptr[3*x+1] = red[0];		//setting the "H"-hue, or yellow
+			ptr[3*x+2] = red[1];		//setting the "S"-saturation, or red
+			ptr[3*x+3] = red[2];		//setting the "V"-value, or blue
 		}
 	}
 	// Perform a Gaussian blur
