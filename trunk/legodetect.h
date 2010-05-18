@@ -225,6 +225,7 @@ void getLegoPosition(void) {
 		img = cvLoadImage( imagefile );
 		if (!img) {
 			printf("Uh oh, bad image!\n");
+			sleep(1);
 		} else {
 			break;
 		}
