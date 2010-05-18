@@ -38,6 +38,7 @@ int orange[3] = {155,226,63};
 // some debugging flags
 int showwindows = 0;
 int debug = 0;
+int debug2 = 0;
 
 // global cv variables
 IplImage* dst = 0;
@@ -71,6 +72,9 @@ struct blob {
 void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 	int blobCounter = 0;
 	map<unsigned int, blob> blobs;
+
+	// status flag
+	int blobexists = 0;
 
     unsigned char threshold = 235;
 
@@ -142,6 +146,8 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 
 		// Print coordinates on image, if it is large enough
 		if(size > 30 && size < 400) {
+			// set flag, since if this statement is entered, then we have a blob
+			blobexists = 1;
 			CvFont font;
 			cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
 			char textBuffer[128];
@@ -160,11 +166,12 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 			//printf("DEBUG BLOB: legoPos[0] = %5.2f, legoPos[1] = %5.2f\n", legoPos[0], legoPos[1]);
 
 			// Show center point
-		} else {
-			pixelx = -77;
-			pixely = -77;
 		}
 		if (debug) cout << "DEBUG BLOB: (" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
+	}
+	if (blobexists == 0) {
+		pixelx = -77;
+		pixely = -77;
 	}
 }
 
@@ -273,21 +280,30 @@ void getLegoPosition(void) {
 	// create the solid color image to subtract with
 	for (y=0; y<img2->height; y++) {
 		// compute the pointer directly as the head of the relavant row y
-		uchar* ptr = (uchar*) (img2->imageData + y * img2->widthStep);
+		uchar* ptrimg = (uchar*) (img->imageData + y * img->widthStep);
+		uchar* ptrdst = (uchar*) (dst->imageData + y * dst->widthStep);
 		for (x=0; x<img2->width; x++) {
-			ptr[3*x+1] = red[0];		//setting the "H"-hue, or yellow
-			ptr[3*x+2] = red[1];		//setting the "S"-saturation, or red
-			ptr[3*x+3] = red[2];		//setting the "V"-value, or blue
+			// if the absolute diff between img and im2 is greater than 50 set dst to 255
+			// else, set dst to 0
+			if ( fabs( ptrimg[3*x+1]-red[0]) < 50) ptrdst[3*x+1] = 0;
+			else { ptrdst[3*x+1] = 255; }
+			if ( fabs( ptrimg[3*x+2]-red[1]) < 50) ptrdst[3*x+2] = 0;
+			else { ptrdst[3*x+2] = 255; }
+			if ( fabs( ptrimg[3*x+3]-red[2]) < 50) ptrdst[3*x+3] = 0;
+			else { ptrdst[3*x+3] = 255; }
+			//setting the "H"-hue, or yellow
+			//setting the "S"-saturation, or red
+			//setting the "V"-value, or blue
 		}
 	}
 	// Perform a Gaussian blur
 	//cvSmooth( img, out, CV_GAUSSIAN, 11, 11 );
 	
 	// subtract the original image from the
-	cvAbsDiff(img, img2, img2);
+	//cvAbsDiff(img, img2, img2);
 
-	// threshold the dst image
-	cvThreshold(img2, dst, 50.0, 255, CV_THRESH_BINARY);
+	// threshold img2 and put in dst
+	//cvThreshold(img2, dst, 50.0, 255, CV_THRESH_BINARY);
 	
 	if (showwindows == 1) {
 		cvShowImage("image after segmentation", dst);
@@ -318,7 +334,6 @@ void getLegoPosition(void) {
 	}
 
 	// make a convolution kernel
-	//IplConvKernel* nullkernel = NULL;
 	IplConvKernel* kernopen = cvCreateStructuringElementEx(4,4,2,2,CV_SHAPE_ELLIPSE);
 	IplConvKernel* kerndilate = cvCreateStructuringElementEx(2,2,1,1,CV_SHAPE_ELLIPSE);
 
@@ -373,7 +388,6 @@ void getLegoPosition(void) {
 	}
 	//################################begin blob detection#######################
 	if (showwindows) {
-		//cvNamedWindow("blob detection input");
 		cvNamedWindow("blob detection result");
 	}
 
@@ -397,25 +411,21 @@ void getLegoPosition(void) {
 		if (debug) cout << "DEBUG BLOB: Time taken: " << end-start << endl;
 	
 	// this is where legoPos is set
-	// add noise to pixely
-	
 	toGlobal( pixelx, pixely);
-	// add noise to pixely
-	printf("noise is: %f\n", noise);
+	// add noise to pixely noise is a global btw
+	if (debug2) printf("noise is: %f\n", noise);
 	legoPos[1] += noise;
+
 	if (debug) printf("DEBUG: function return from toGlobal is: %f and %f \n", legoPos[0], legoPos[1]);
 
 	// Show images in a nice window
 	if (showwindows) {
-		//cvShowImage( "blob detection input", frame );
 		cvShowImage( "blob detection result", finalFrame );
 	}
 	//#######################end blobs##########################################
 
 	// wait for a key to be pressed
-	if (showwindows) {
-		cvWaitKey(0);
-	}
+	if (showwindows) cvWaitKey(0);
 
 	// release the memory
 	cvReleaseImage( &img );
@@ -423,8 +433,8 @@ void getLegoPosition(void) {
 	cvReleaseImage( &dst );
 	cvReleaseImage( &temp );
 	cvReleaseImage( &frame );
-	cvReleaseImage( &gsFrame);
-	cvReleaseImage( &finalFrame);
+	cvReleaseImage( &gsFrame );
+	cvReleaseImage( &finalFrame );
 	
 	// possibly destroy windows here
 	//if (showwindows == 1) {
