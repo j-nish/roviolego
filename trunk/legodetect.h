@@ -160,6 +160,9 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 
 			// Show center point
 			cout << "DEBUG BLOB: (" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
+		} else {
+			pixelx = -77;
+			pixely = -77;
 		}
 	}
 }
