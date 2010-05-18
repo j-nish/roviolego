@@ -28,6 +28,8 @@ double Vx=0;
 //robot's y position
 double Vy=0;
 
+int tmpBool = 0;
+
 //Kalman filter params
 double A[3][3] = {{1.0, 0.0, 0.0},
                   {0.0, 1.0, 0.0},
@@ -293,9 +295,9 @@ void resetEnc()
 
 void resetLastPos()
 {
-    xP[0][0] = x[0][0];
-    xP[1][0] = x[1][0];
-    xP[2][0] = x[2][0];
+    xP[0][0] = xI;
+    xP[1][0] = yI;
+    xP[2][0] = wI;
 }
 
 
@@ -311,10 +313,10 @@ void recordOdom(const nav_msgs::Odometry::ConstPtr& data){
 void goToZero()
 {
   numCmds += 2;
-  cmdTypes[numCmds-2] = 0;
-  cmds[numCmds-2]     = sqrt(x[0][0]*x[0][0]+x[1][0]*x[1][0])/1.5;
+  cmdTypes[numCmds-2] = 5;
+  cmds[numCmds-2]     = 0.0;
   cmdTypes[numCmds-1] = 3;
-  cmds[numCmds-1]     = 3.0*PI/2.0 + atan2(x[1][0],x[0][0]);
+  cmds[numCmds-1]     =  atan2(x[1][0],x[0][0]);
   //if (cmds[0] > 50){
    //  cmds[0] = 20;
   //}
@@ -415,7 +417,7 @@ int main(int argc, char** argv)
     updateKalman();
     
     //Update travel info
-    dist=  sqrt((x[0][0]-xP[0][0])*(x[0][0]-xP[0][0])+(x[1][0]-xP[1][0])*(x[1][0]-xP[1][0]));
+    dist=  sqrt((xI-xP[0][0])*(xI-xP[0][0])+(yI-xP[1][0])*(yI-xP[1][0]));
     angle= wI;
 
     //print the location and reset cmds
@@ -433,7 +435,22 @@ int main(int argc, char** argv)
       cmdTypes[numCmds-1] = 4;
       if(legoY>0){
         moveToLego();
-      }
+      }    
+    /*
+     goToZero();
+     numCmds++;
+     cmdTypes[numCmds-1] = 2345;
+     numCmds++;
+     cmdTypes[numCmds-1] = 2345;
+     numCmds++;
+     cmdTypes[numCmds-1] = 2345;
+     numCmds++;
+     cmdTypes[numCmds-1] = 2345;
+     numCmds++;
+     cmdTypes[numCmds-1] = 2345;
+     numCmds++;
+     cmdTypes[numCmds-1] = 2345;
+    */
     } 
 
     //If there are no commands to take, end.
@@ -528,7 +545,11 @@ int main(int argc, char** argv)
           numCmds--;
           resetLastPos();
         }  
-    }else if(cmdTypes[numCmds-1] == 3){//rotate around to a certain angle
+    }else if(cmdTypes[numCmds-1] == 3){//rotate around to point at origin
+      if (tmpBool==0){
+          cmds[numCmds-1] = 3.0*PI/2.0 + atan2(yI,xI);
+          tmpBool = 1;
+        };
         if(cmds[numCmds-1] > PI){
             cmds[numCmds-1] -= 2.0*PI;
         }else if(cmds[numCmds-1] < - PI){
@@ -538,6 +559,7 @@ int main(int argc, char** argv)
             if(angle-cmds[numCmds-1]<thresh){
                 numCmds--;
                 resetLastPos();
+                tmpBool = 0;
             }else{
                 cmd.linear.y = 3;
             }
@@ -545,18 +567,38 @@ int main(int argc, char** argv)
             if(angle-cmds[numCmds-1] > -thresh){
                 numCmds--;
                 resetLastPos();
+                tmpBool = 0;
             }else{
                 cmd.linear.y =  -3;
             } 
         }
-        numCmds++;
-        cmdTypes[numCmds-1] = 2340; 
     }else if(cmdTypes[numCmds-1] == 4){//rotate just a little
        cmd.angular.z =  -3;
        cmdTypes[numCmds-1] = 2340;
        numCmds++;
        cmdTypes[numCmds-1] = 2340; 
        resetLastPos();
+    }else if (cmdTypes[numCmds-1] == 5){ //go distance to zero-zero
+        if (tmpBool==0){
+          cmds[numCmds-1] = sqrt(x[0][0]*x[0][0]+x[1][0]*x[1][0])/1.5;
+          if (cmds[numCmds-1] > 50){
+          cmds[numCmds-1] = 50.0;
+          }
+          tmpBool = 1;
+        }
+        if(cmds[numCmds-1]>=0){ //going forward
+            if (dist>=cmds[numCmds-1]){ //if has gone far enough
+                numCmds--;
+                resetLastPos();
+                tmpBool = 0;
+            }else{ //otherwise keep going
+                cmd.linear.x = 5;
+            }
+        }else{
+           numCmds--;
+           resetLastPos();
+           tmpBool = 0;
+        }
     }else{
          numCmds--;
     }
