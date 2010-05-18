@@ -169,6 +169,9 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 // returns void, but uses legoPos array
 void toGlobal( int xpixel, int ypixel) {
 	//do math for finding the actual position
+	
+	if (debug) printf("DEBUG toGlobal: input x is %d, input y is = %d\n", xpixel, ypixel);
+
 	int f = 600;
 	int yhorz = 220;
 	double hheight = 3.5;
@@ -375,7 +378,7 @@ void getLegoPosition(void) {
 		cout << "DEBUG BLOB: Time taken: " << end-start << endl;
 	}
 	// this is where legoPos is set
-	toGlobal( pixelx, pixelx);
+	toGlobal( pixelx, pixely);
 	if (debug) printf("DEBUG: function return from toGlobal is: %f and %f \n", legoPos[0], legoPos[1]);
 
 	// Show images in a nice window
