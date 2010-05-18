@@ -26,6 +26,7 @@ char *imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
 double *legoPos = (double *) malloc(sizeof(double) * 2);
 int pixelx;
 int pixely;
+double noise=0;
 
 // arrays for colors (BRG)
 int red[3] = {40,196,27};
@@ -181,7 +182,7 @@ void toGlobal( int xpixel, int ypixel) {
 	xpixel -= 320;
 	ypixel -= yhorz;
 
-	y = (double) f*hheight/ (double) ypixel; //adjust as needed
+	y = (double) f*hheight/ (double) ypixel + noise; //adjust as needed
 	x = (double) y*xpixel/ (double) f;
 
 	if (debug) printf("DEBUG toGlobal: x = %f, y = %f\n", x, y);
@@ -221,6 +222,12 @@ void getLegoPosition(void) {
 			break;
 		}
 	}
+
+	// set the noise value
+	uchar* ptr = (uchar*) (img->imageData + 100 * img->widthStep);
+	noise = (double) ptr[3*100+1] / 255.0;
+
+
 	
 	// create three windows
 	if (showwindows) {
@@ -390,7 +397,12 @@ void getLegoPosition(void) {
 		if (debug) cout << "DEBUG BLOB: Time taken: " << end-start << endl;
 	
 	// this is where legoPos is set
+	// add noise to pixely
+	
 	toGlobal( pixelx, pixely);
+	// add noise to pixely
+	printf("noise is: %f\n", noise);
+	legoPos[1] += noise;
 	if (debug) printf("DEBUG: function return from toGlobal is: %f and %f \n", legoPos[0], legoPos[1]);
 
 	// Show images in a nice window
