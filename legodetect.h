@@ -154,17 +154,16 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 
 			pixelx = (*i).second.center.x;
 			pixely = (*i).second.center.y;
-			printf("DEBUG PIXELX: is %d and %d\n", pixelx, pixely);
+			if (debug) printf("DEBUG PIXELX: is %d and %d\n", pixelx, pixely);
 
 			//printf("DEBUG BLOB: legoPos[0] = %5.2f, legoPos[1] = %5.2f\n", legoPos[0], legoPos[1]);
 
 			// Show center point
-			cout << "DEBUG BLOB: (" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
 		} else {
 			pixelx = -77;
 			pixely = -77;
 		}
-		cout << "DEBUG BLOB: (" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
+		if (debug) cout << "DEBUG BLOB: (" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
 	}
 }
 
