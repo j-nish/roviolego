@@ -164,6 +164,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 			pixelx = -77;
 			pixely = -77;
 		}
+		cout << "DEBUG BLOB: (" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
 	}
 }
 
@@ -203,6 +204,7 @@ void printImageInfo( IplImage* image ) {
 	printf( "Depth:  %d \n",  			image->depth );
 	printf("----------------------------------\n");
 } 
+
 // start "main" program
 void getLegoPosition(void) {
 	// prints out the first argument
@@ -372,12 +374,14 @@ void getLegoPosition(void) {
 	finalFrame = cvCloneImage(img);
 
 	// Detection (with timer for debugging purposes)
-	if (debug) {
+	
 		clock_t start = clock();
 		detectBlobs(gsFrame, finalFrame);
 		clock_t end = clock();
-		cout << "DEBUG BLOB: Time taken: " << end-start << endl;
-	}
+		if (debug) {
+			cout << "DEBUG BLOB: Time taken: " << end-start << endl;
+		}
+	
 	// this is where legoPos is set
 	toGlobal( pixelx, pixely);
 	if (debug) printf("DEBUG: function return from toGlobal is: %f and %f \n", legoPos[0], legoPos[1]);
