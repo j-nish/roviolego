@@ -10,7 +10,6 @@
 #include <highgui.h>
 
 #include "legodetect.h"
-int *legoPos;
 
 using namespace std;
 
@@ -86,8 +85,9 @@ int main(int argc, char** argv) {
 		}
 		//get image from ros
 		//IplImage* imgMsgToCv(sensor_msgs::Image::ConstPtr image_message, string cv_encoding="passthrough");
-		int *legoPos = getLegoPosition();
-		printf("DEBUG MAIN: legoPos[0] = %d, legoPos[1] = %d\n", legoPos[0], legoPos[1]);
+		//int *legoPos = getLegoPosition();
+		getLegoPosition();
+		printf("DEBUG MAIN: legoPos[0] = %f, legoPos[1] = %f\n", legoPos[0], legoPos[1]);
 
 		//send command
 		pub.publish(cmd);
