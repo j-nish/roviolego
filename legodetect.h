@@ -24,6 +24,8 @@ char *imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
 
 // the global lego position array
 double *legoPos = (double *) malloc(sizeof(double) * 2);
+int pixelx;
+int pixely;
 
 // arrays for colors (BRG)
 int red[3] = {40,196,27};
@@ -63,8 +65,6 @@ struct blob {
 	coordinate center;
 };
 
-int pixelx;
-int pixely;
 
 // function that does the actual blob detection
 void detectBlobs(IplImage* frame, IplImage* finalFrame) {
@@ -156,8 +156,9 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 			//legoPos[1] = (*i).second.center.y;
 			pixelx = (*i).second.center.x;
 			pixely = (*i).second.center.y;
+			printf("DEBUG PIXELX: is %d and %d\n", pixelx, pixely);
 
-			printf("DEBUG BLOB: legoPos[0] = %5.2f, legoPos[1] = %5.2f\n", legoPos[0], legoPos[1]);
+			//printf("DEBUG BLOB: legoPos[0] = %5.2f, legoPos[1] = %5.2f\n", legoPos[0], legoPos[1]);
 
 			// Show center point
 			cout << "DEBUG BLOB: (" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
@@ -178,7 +179,8 @@ void toGlobal( int xpixel, int ypixel) {
 
 	y = (double) f*hheight/ (double) ypixel; //adjust as needed
 	x = (double) y*xpixel/ (double) f;
-	if (debug) printf("DEBUG: x = %f, y = %f\n", x, y);
+
+	if (debug) printf("DEBUG toGlobal: x = %f, y = %f\n", x, y);
 	
 	legoPos[0] = x;
 	legoPos[1] = y;
@@ -336,9 +338,6 @@ void getLegoPosition(void) {
 
 	//use function to return pointer to array of positions
 	//int* foo = toGlobal( (int) averagex, (int) averagey);
-	toGlobal( pixelx, pixelx);
-
-	if (debug) printf("DEBUG: function return is: %f and %f \n", legoPos[0], legoPos[1]);
 	
 	// save the output image to a file
 	cvSaveImage("outputcv.jpg", temp);
@@ -375,6 +374,9 @@ void getLegoPosition(void) {
 		clock_t end = clock();
 		cout << "DEBUG BLOB: Time taken: " << end-start << endl;
 	}
+	// this is where legoPos is set
+	toGlobal( pixelx, pixelx);
+	if (debug) printf("DEBUG: function return from toGlobal is: %f and %f \n", legoPos[0], legoPos[1]);
 
 	// Show images in a nice window
 	if (showwindows) {
