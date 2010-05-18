@@ -63,6 +63,9 @@ struct blob {
 	coordinate center;
 };
 
+int pixelx;
+int pixely;
+
 // function that does the actual blob detection
 void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 	int blobCounter = 0;
@@ -149,8 +152,10 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 			cvPutText(finalFrame, textBuffer, cvPoint((*i).second.center.x + 5, (*i).second.center.y - 5), &font, cvScalar(0, 0, 153));
 			cvRectangle(finalFrame, cvPoint((*i).second.min.x, (*i).second.min.y), cvPoint((*i).second.max.x, (*i).second.max.y), cvScalar(0, 0, 153), 1);
 
-			legoPos[0] = (*i).second.center.x;
-			legoPos[1] = (*i).second.center.y;
+			//legoPos[0] = (*i).second.center.x;
+			//legoPos[1] = (*i).second.center.y;
+			pixelx = (*i).second.center.x;
+			pixely = (*i).second.center.y;
 
 			printf("DEBUG BLOB: legoPos[0] = %5.2f, legoPos[1] = %5.2f\n", legoPos[0], legoPos[1]);
 
@@ -331,7 +336,7 @@ void getLegoPosition(void) {
 
 	//use function to return pointer to array of positions
 	//int* foo = toGlobal( (int) averagex, (int) averagey);
-	//toGlobal( (int) averagex, (int) averagey);
+	toGlobal( pixelx, pixelx);
 
 	if (debug) printf("DEBUG: function return is: %f and %f \n", legoPos[0], legoPos[1]);
 	
