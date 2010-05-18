@@ -18,8 +18,8 @@ using namespace std;
 
 // hardcode the path to the file to be processed 
 // need the typecast to avoid compiler warning
-char *imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
-//char *imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
+//char *imagefile =  (char *) "/home/crazyjoe/Desktop/rovio/tmp.jpg";
+char *imagefile =  (char *) "/home/jn/svn4/tmp.jpg";
 //char* imagefile = (char *) "CamImg8129.jpg";
 
 // the global lego position array
@@ -29,11 +29,11 @@ int pixely;
 double noise=0;
 
 // arrays for colors (BRG)
-int red[3] = {40,196,27};
-int green[3] = {70,40,127};
-int yellow[3] = {205,245,47}; //works
-int blue[3] = {182,56,28};
-int orange[3] = {155,226,63};
+int red[3] 		= {40,196,27};		// works
+int green[3] 	= {70,40,127};		// works
+int yellow[3] 	= {205,245,47}; 	// works
+int blue[3] 	= {180,20,50};		// kinda works
+int orange[3] 	= {155,226,63};		// works
 
 // some debugging flags
 int showwindows = 0;
@@ -145,7 +145,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		if (debug) printf("DEBUG detectBlobs: size is: %d\n", size);
 
 		// Print coordinates on image, if it is large enough
-		if(size > 30 && size < 400) {
+		if(size > 30 && size < 2500) {
 			// set flag, since if this statement is entered, then we have a blob
 			blobexists = 1;
 			CvFont font;
@@ -161,7 +161,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 
 			pixelx = (*i).second.center.x;
 			pixely = (*i).second.center.y;
-			if (debug) printf("DEBUG PIXELX: is %d and %d\n", pixelx, pixely);
+			if (debug) printf("DEBUG detectBlob: blob found. pixelx is %d and %d\n", pixelx, pixely);
 
 			//printf("DEBUG BLOB: legoPos[0] = %5.2f, legoPos[1] = %5.2f\n", legoPos[0], legoPos[1]);
 
@@ -239,14 +239,14 @@ void getLegoPosition(void) {
 	
 	// create three windows
 	if (showwindows) {
-		cvNamedWindow( "image-in" );
-		cvNamedWindow( "image after segmentation" );
-		cvNamedWindow( "image-out" );
+		cvNamedWindow( "Step 1 Original image" );
+		cvNamedWindow( "Step 2 Background subtraction and thresholding" );
+		cvNamedWindow( "Step 3 binary image" );
 	}
 
 	// Show the original image
 	if (showwindows) {
-		cvShowImage("image-in", img);
+		cvShowImage("Step 1 Original image", img);
 	}
 
 	// set the rectangle for cropping
@@ -278,6 +278,7 @@ void getLegoPosition(void) {
 	temp = cvCreateImage( cvGetSize(img), IPL_DEPTH_8U, 1 );
 
 	int x, y;
+	int thresh = 50;
 	// create the solid color image to subtract with
 	for (y=0; y<img2->height; y++) {
 		// compute the pointer directly as the head of the relavant row y
@@ -286,12 +287,49 @@ void getLegoPosition(void) {
 		for (x=0; x<img2->width; x++) {
 			// if the absolute diff between img and im2 is greater than 50 set dst to 255
 			// else, set dst to 0
-			if ( fabs( ptrimg[3*x+1]-red[0]) < 50) ptrdst[3*x+1] = 0;
+			
+			if ( fabs( ptrimg[3*x+1]-red[0]) < thresh) ptrdst[3*x+1] = 0;
 			else { ptrdst[3*x+1] = 255; }
-			if ( fabs( ptrimg[3*x+2]-red[1]) < 50) ptrdst[3*x+2] = 0;
+			if ( fabs( ptrimg[3*x+2]-red[1]) < thresh) ptrdst[3*x+2] = 0;
 			else { ptrdst[3*x+2] = 255; }
-			if ( fabs( ptrimg[3*x+3]-red[2]) < 50) ptrdst[3*x+3] = 0;
+			if ( fabs( ptrimg[3*x+3]-red[2]) < thresh) ptrdst[3*x+3] = 0;
 			else { ptrdst[3*x+3] = 255; }
+			
+			// now yellow
+			if ( fabs( ptrimg[3*x+1]-yellow[0]) < thresh) ptrdst[3*x+1] = 0;
+			if ( fabs( ptrimg[3*x+2]-yellow[1]) < thresh) ptrdst[3*x+2] = 0;
+			if ( fabs( ptrimg[3*x+3]-yellow[2]) < thresh) ptrdst[3*x+3] = 0;
+
+			// now orange
+			if ( fabs( ptrimg[3*x+1]-orange[0]) < 50) ptrdst[3*x+1] = 0;
+			if ( fabs( ptrimg[3*x+2]-orange[1]) < 50) ptrdst[3*x+2] = 0;
+			if ( fabs( ptrimg[3*x+3]-orange[2]) < 50) ptrdst[3*x+3] = 0;
+
+			// now blue
+			if ( fabs( ptrimg[3*x+1]-blue[0]) < 20) ptrdst[3*x+1] = 0;
+			if ( fabs( ptrimg[3*x+2]-blue[1]) < 20) ptrdst[3*x+2] = 0;
+			if ( fabs( ptrimg[3*x+3]-blue[2]) < 20) ptrdst[3*x+3] = 0;
+
+			// now green
+			//if ( fabs( ptrimg[3*x+1]-green[0]) < 20) ptrdst[3*x+1] = 0;
+			//if ( fabs( ptrimg[3*x+2]-green[1]) < 20) ptrdst[3*x+2] = 0;
+			//if ( fabs( ptrimg[3*x+3]-green[2]) < 20) ptrdst[3*x+3] = 0;
+
+			/* 
+			if ( fabs( 
+					ptrimg[3*x+1]-yellow[0]) < thresh || 
+					ptrimg[3*x+1]-red[0] < 50) ptrdst[3*x+1] = 0;
+			else { ptrdst[3*x+1] = 255; }
+			if ( fabs( 
+					ptrimg[3*x+2]-yellow[1]) < thresh ||
+					ptrimg[3*x+2]-red[1] < 50) ptrdst[3*x+2] = 0;
+			else { ptrdst[3*x+2] = 255; }
+			if ( fabs( 
+					ptrimg[3*x+3]-yellow[2]) < thresh ||
+					ptrimg[3*x+3]-red[2] < 50) ptrdst[3*x+3] = 0;
+			else { ptrdst[3*x+3] = 255; }
+			*/
+
 			//setting the "H"-hue, or yellow
 			//setting the "S"-saturation, or red
 			//setting the "V"-value, or blue
@@ -307,7 +345,7 @@ void getLegoPosition(void) {
 	//cvThreshold(img2, dst, 50.0, 255, CV_THRESH_BINARY);
 	
 	if (showwindows == 1) {
-		cvShowImage("image after segmentation", dst);
+		cvShowImage("Step 2 Background subtraction and thresholding", dst);
 	}
 
 	// after segmenting, allow only the "all 3 channels at 255" to remain
@@ -335,14 +373,15 @@ void getLegoPosition(void) {
 	}
 
 	// make a convolution kernel
-	IplConvKernel* kernopen = cvCreateStructuringElementEx(4,4,2,2,CV_SHAPE_ELLIPSE);
-	IplConvKernel* kerndilate = cvCreateStructuringElementEx(2,2,1,1,CV_SHAPE_ELLIPSE);
+	IplConvKernel* kernopen = cvCreateStructuringElementEx(8,8,4,4,CV_SHAPE_ELLIPSE);
+	//IplConvKernel* kerndilate = cvCreateStructuringElementEx(2,2,1,1,CV_SHAPE_ELLIPSE);
 
 	// perform dilation which takes the max
-	cvDilate(dst, dst, kerndilate, 1);
+	//cvDilate(dst, dst, kerndilate, 1);
 
 	// apply morphological opening
 	cvMorphologyEx(dst, dst, temp, kernopen, CV_MOP_CLOSE);
+	//cvMorphologyEx(dst, dst, temp, kernopen, CV_MOP_CLOSE);
 
 	// convert to greyscale (1channel) destination must be 1 channel
 	cvCvtColor(dst, temp, CV_RGB2GRAY);
@@ -385,11 +424,11 @@ void getLegoPosition(void) {
 
 	//Show the processed image
 	if (showwindows) {
-		cvShowImage("image-out", temp);
+		cvShowImage("Step 3 binary image", temp);
 	}
 	//################################begin blob detection#######################
 	if (showwindows) {
-		cvNamedWindow("blob detection result");
+		cvNamedWindow("Step 4 Blob detection result");
 	}
 
 	// gsFrame and finalFrame are globals defined at the top
@@ -421,7 +460,7 @@ void getLegoPosition(void) {
 
 	// Show images in a nice window
 	if (showwindows) {
-		cvShowImage( "blob detection result", finalFrame );
+		cvShowImage( "Step 4 Blob detection result", finalFrame );
 	}
 	//#######################end blobs##########################################
 
