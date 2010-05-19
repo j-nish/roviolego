@@ -29,16 +29,23 @@ int pixely;
 double noise=0;
 
 // arrays for colors (BRG)
-int red[3] 		= {40,196,27};		// works
-int green[3] 	= {70,40,127};		// works
-int yellow[3] 	= {205,245,47}; 	// works
-int blue[3] 	= {180,20,50};		// kinda works
-int orange[3] 	= {155,226,63};		// works
+int red[3] 			= {40,196,27};		// works
+int green[3] 		= {70,40,127};		// works
+int yellow[3] 		= {205,245,47}; 	// works
+int blue[3] 		= {180,20,50};		// kinda works
+int orange[3] 		= {155,226,63};		// works
+int white[3] 		= {255,255,255};		// works
+int black[3] 		= {0,0,0};		// works
+int lightblue[3] 	= {245,51,126};		// works
+int brown[3] 		= {3,62,36};		// ne
 
 // some debugging flags
-int showwindows = 0;
-int debug = 0;
-int debug2 = 0;
+int showwindows = 1;
+int debug = 1;
+int debug2 = 1;
+int debugtime = 0;
+int debugnoise = 0;
+int debugimage = 0;
 
 // global cv variables
 IplImage* dst = 0;
@@ -82,11 +89,10 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 	for(int row = 0; row < frame->height; ++row) {
 		for(int column = 0; column < frame->width; ++column) {
 			//unsigned char byte = (unsigned char) imgStream.get();
-			// this is the condition for being a blob pixel
 			unsigned char byte = (unsigned char) frame->imageData[(row*frame->width)+ column];
-			
+			// this is the condition for being a blob pixel
 			if(byte > threshold) {
-			//printf("DEBUG detectBlob: unsigned char byte is: %d\n", byte);
+			//printf("DEBUG detectBlobs: unsigned char byte is: %d\n", byte);
 				int start = column;
 				for(;byte >= threshold; byte = (unsigned char) frame->imageData[(row*frame->width)+ column], ++column);
 				int stop = column-1;
@@ -142,7 +148,7 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 		(*i).second.center.y = (*i).second.min.y + ((*i).second.max.y - (*i).second.min.y) / 2;
 
 		int size = ((*i).second.max.x - (*i).second.min.x) * ((*i).second.max.y - (*i).second.min.y);
-		if (debug) printf("DEBUG detectBlobs: size is: %d\n", size);
+		if (debug) printf("DEBUG detectBlobs: blob found. size is: %d\n", size);
 
 		// Print coordinates on image, if it is large enough
 		if(size > 30 && size < 2500) {
@@ -156,19 +162,22 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 			cvLine(finalFrame, cvPoint((*i).second.center.x - 5, (*i).second.center.y), cvPoint((*i).second.center.x + 5, (*i).second.center.y), cvScalar(0, 0, 153), 1);
 			cvLine(finalFrame, cvPoint((*i).second.center.x, (*i).second.center.y - 5), cvPoint((*i).second.center.x, (*i).second.center.y + 5), cvScalar(0, 0, 153), 1);
 			sprintf(textBuffer, "(%d, %d)", (*i).second.center.x, (*i).second.center.y);
+			// the cvScalar values denote BGR values
 			cvPutText(finalFrame, textBuffer, cvPoint((*i).second.center.x + 5, (*i).second.center.y - 5), &font, cvScalar(0, 0, 153));
 			cvRectangle(finalFrame, cvPoint((*i).second.min.x, (*i).second.min.y), cvPoint((*i).second.max.x, (*i).second.max.y), cvScalar(0, 0, 153), 1);
 
+			// pixelx and pixely are globals
 			pixelx = (*i).second.center.x;
 			pixely = (*i).second.center.y;
-			if (debug) printf("DEBUG detectBlob: blob found. pixelx is %d and %d\n", pixelx, pixely);
+			// Show center point
+			if (debug) printf("DEBUG detectBlobs: Lego blob found. pixel location is: (%d, %d)\n", pixelx, pixely);
 
 			//printf("DEBUG BLOB: legoPos[0] = %5.2f, legoPos[1] = %5.2f\n", legoPos[0], legoPos[1]);
 
-			// Show center point
 		}
-		if (debug) cout << "DEBUG BLOB: (" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
+		//if (debug) cout << "DEBUG detectBlob: (" << (*i).second.center.x << ", " << (*i).second.center.y << ")" << endl;
 	}
+	// if blob doesn't exist
 	if (blobexists == 0) {
 		pixelx = -77;
 		pixely = -77;
@@ -176,9 +185,8 @@ void detectBlobs(IplImage* frame, IplImage* finalFrame) {
 }
 
 // returns void, but uses legoPos array
+// do math for finding the actual position
 void toGlobal( int xpixel, int ypixel) {
-	//do math for finding the actual position
-	
 	if (debug) printf("DEBUG toGlobal: input x is %d, input y is = %d\n", xpixel, ypixel);
 
 	int f = 600;
@@ -217,10 +225,6 @@ void getLegoPosition(void) {
 	// prints out the first argument
 	if (debug) printf("File to be input is: %s\n", imagefile);
 
-	// takes in an image file from a hardcoded location
-		//img = cvLoadImage( imagefile );
-	//img = NULL;
-	
 	while (1) {
 		img = cvLoadImage( imagefile );
 		if (!img) {
@@ -234,8 +238,6 @@ void getLegoPosition(void) {
 	// set the noise value
 	uchar* ptr = (uchar*) (img->imageData + 100 * img->widthStep);
 	noise = (double) ptr[3*100+1] / 255.0;
-
-
 	
 	// create three windows
 	if (showwindows) {
@@ -245,9 +247,7 @@ void getLegoPosition(void) {
 	}
 
 	// Show the original image
-	if (showwindows) {
-		cvShowImage("Step 1 Original image", img);
-	}
+	if (showwindows) cvShowImage("Step 1 Original image", img);
 
 	// set the rectangle for cropping
 	//int new_width = 	200;
@@ -260,7 +260,7 @@ void getLegoPosition(void) {
 	//cvCopy(img, cropped, NULL);
 
 	// print image info
-	if (debug) printImageInfo( img );
+	if (debugimage) printImageInfo( img );
 
 	//copy from img to img2
 	//cvCopy(img, img2, NULL);
@@ -279,7 +279,7 @@ void getLegoPosition(void) {
 
 	int x, y;
 	int thresh = 50;
-	// create the solid color image to subtract with
+	// PHASE: background subtraction and threshold input (img) output (dst)
 	for (y=0; y<img2->height; y++) {
 		// compute the pointer directly as the head of the relavant row y
 		uchar* ptrimg = (uchar*) (img->imageData + y * img->widthStep);
@@ -287,7 +287,6 @@ void getLegoPosition(void) {
 		for (x=0; x<img2->width; x++) {
 			// if the absolute diff between img and im2 is greater than 50 set dst to 255
 			// else, set dst to 0
-			
 			if ( fabs( ptrimg[3*x+1]-red[0]) < thresh) ptrdst[3*x+1] = 0;
 			else { ptrdst[3*x+1] = 255; }
 			if ( fabs( ptrimg[3*x+2]-red[1]) < thresh) ptrdst[3*x+2] = 0;
@@ -301,9 +300,9 @@ void getLegoPosition(void) {
 			if ( fabs( ptrimg[3*x+3]-yellow[2]) < thresh) ptrdst[3*x+3] = 0;
 
 			// now orange
-			if ( fabs( ptrimg[3*x+1]-orange[0]) < 50) ptrdst[3*x+1] = 0;
-			if ( fabs( ptrimg[3*x+2]-orange[1]) < 50) ptrdst[3*x+2] = 0;
-			if ( fabs( ptrimg[3*x+3]-orange[2]) < 50) ptrdst[3*x+3] = 0;
+			if ( fabs( ptrimg[3*x+1]-orange[0]) < 30) ptrdst[3*x+1] = 0;
+			if ( fabs( ptrimg[3*x+2]-orange[1]) < 30) ptrdst[3*x+2] = 0;
+			if ( fabs( ptrimg[3*x+3]-orange[2]) < 30) ptrdst[3*x+3] = 0;
 
 			// now blue
 			if ( fabs( ptrimg[3*x+1]-blue[0]) < 20) ptrdst[3*x+1] = 0;
@@ -311,24 +310,24 @@ void getLegoPosition(void) {
 			if ( fabs( ptrimg[3*x+3]-blue[2]) < 20) ptrdst[3*x+3] = 0;
 
 			// now green
-			//if ( fabs( ptrimg[3*x+1]-green[0]) < 20) ptrdst[3*x+1] = 0;
-			//if ( fabs( ptrimg[3*x+2]-green[1]) < 20) ptrdst[3*x+2] = 0;
-			//if ( fabs( ptrimg[3*x+3]-green[2]) < 20) ptrdst[3*x+3] = 0;
+			//if ( fabs( ptrimg[3*x+1]-green[0]) < 10) ptrdst[3*x+1] = 0;
+			//if ( fabs( ptrimg[3*x+2]-green[1]) < 10) ptrdst[3*x+2] = 0;
+			//if ( fabs( ptrimg[3*x+3]-green[2]) < 10) ptrdst[3*x+3] = 0;
+			
+			// now white
+			if ( fabs( ptrimg[3*x+1]-white[0]) < 20) ptrdst[3*x+1] = 0;
+			if ( fabs( ptrimg[3*x+2]-white[1]) < 20) ptrdst[3*x+2] = 0;
+			if ( fabs( ptrimg[3*x+3]-white[2]) < 20) ptrdst[3*x+3] = 0;
 
-			/* 
-			if ( fabs( 
-					ptrimg[3*x+1]-yellow[0]) < thresh || 
-					ptrimg[3*x+1]-red[0] < 50) ptrdst[3*x+1] = 0;
-			else { ptrdst[3*x+1] = 255; }
-			if ( fabs( 
-					ptrimg[3*x+2]-yellow[1]) < thresh ||
-					ptrimg[3*x+2]-red[1] < 50) ptrdst[3*x+2] = 0;
-			else { ptrdst[3*x+2] = 255; }
-			if ( fabs( 
-					ptrimg[3*x+3]-yellow[2]) < thresh ||
-					ptrimg[3*x+3]-red[2] < 50) ptrdst[3*x+3] = 0;
-			else { ptrdst[3*x+3] = 255; }
-			*/
+			// now lightblue
+			//if ( fabs( ptrimg[3*x+1]-lightblue[0]) < 20) ptrdst[3*x+1] = 0;
+			//if ( fabs( ptrimg[3*x+2]-lightblue[1]) < 20) ptrdst[3*x+2] = 0;
+			//if ( fabs( ptrimg[3*x+3]-lightblue[2]) < 20) ptrdst[3*x+3] = 0;
+			
+			// now brown
+			//if ( fabs( ptrimg[3*x+1]-brown[0]) < 20) ptrdst[3*x+1] = 0;
+			//if ( fabs( ptrimg[3*x+2]-brown[1]) < 20) ptrdst[3*x+2] = 0;
+			//if ( fabs( ptrimg[3*x+3]-brown[2]) < 20) ptrdst[3*x+3] = 0;
 
 			//setting the "H"-hue, or yellow
 			//setting the "S"-saturation, or red
@@ -344,9 +343,7 @@ void getLegoPosition(void) {
 	// threshold img2 and put in dst
 	//cvThreshold(img2, dst, 50.0, 255, CV_THRESH_BINARY);
 	
-	if (showwindows == 1) {
-		cvShowImage("Step 2 Background subtraction and thresholding", dst);
-	}
+	if (showwindows == 1) cvShowImage("Step 2 Background subtraction and thresholding", dst);
 
 	// after segmenting, allow only the "all 3 channels at 255" to remain
 	for (y=0; y<dst->height; y++) {
@@ -373,8 +370,7 @@ void getLegoPosition(void) {
 	}
 
 	// make a convolution kernel
-	IplConvKernel* kernopen = cvCreateStructuringElementEx(8,8,4,4,CV_SHAPE_ELLIPSE);
-	//IplConvKernel* kerndilate = cvCreateStructuringElementEx(2,2,1,1,CV_SHAPE_ELLIPSE);
+	IplConvKernel* kernopen = cvCreateStructuringElementEx(10,10,4,4,CV_SHAPE_ELLIPSE);
 
 	// perform dilation which takes the max
 	//cvDilate(dst, dst, kerndilate, 1);
@@ -414,22 +410,20 @@ void getLegoPosition(void) {
 	//if (debug) printf("DEBUG: averagex= %f averagey= %f\n", averagex, averagey);
 
 	//use function to return pointer to array of positions
-	//int* foo = toGlobal( (int) averagex, (int) averagey);
+	//int *foo = toGlobal( (int) averagex, (int) averagey);
 	
 	// save the output image to a file
 	cvSaveImage("outputcv.jpg", temp);
 
 	// print final image stats
-	//printImageInfo( temp );
+	if (debugimage) printImageInfo( temp );
 
 	//Show the processed image
-	if (showwindows) {
-		cvShowImage("Step 3 binary image", temp);
-	}
+	if (showwindows) cvShowImage("Step 3 binary image", temp);
+	
 	//################################begin blob detection#######################
-	if (showwindows) {
-		cvNamedWindow("Step 4 Blob detection result");
-	}
+	if (showwindows) cvNamedWindow("Step 4 Blob detection result");
+
 
 	// gsFrame and finalFrame are globals defined at the top
 	// gsFrame is a greyscale image that will be the input for detectBlobs()
@@ -444,26 +438,23 @@ void getLegoPosition(void) {
 	finalFrame = cvCloneImage(img);
 
 	// Detection (with timer for debugging purposes)
-	
-		clock_t start = clock();
-		detectBlobs(gsFrame, finalFrame);
-		clock_t end = clock();
-		if (debug) cout << "DEBUG BLOB: Time taken: " << end-start << endl;
+	clock_t start = clock();
+	detectBlobs(gsFrame, finalFrame);
+	clock_t end = clock();
+	if (debugtime) cout << "DEBUG BLOB: Time taken: " << end-start << endl;
 	
 	// this is where legoPos is set
 	toGlobal( pixelx, pixely);
 	// add noise to pixely noise is a global btw
-	if (debug2) printf("noise is: %f\n", noise);
+	if (debugnoise) printf("DEBUG main: noise is: %f\n", noise);
 	legoPos[1] += noise;
 
 	if (debug) printf("DEBUG: function return from toGlobal is: %f and %f \n", legoPos[0], legoPos[1]);
 
 	// Show images in a nice window
-	if (showwindows) {
-		cvShowImage( "Step 4 Blob detection result", finalFrame );
-	}
+	if (showwindows) cvShowImage( "Step 4 Blob detection result", finalFrame );
 	//#######################end blobs##########################################
-
+	
 	// wait for a key to be pressed
 	if (showwindows) cvWaitKey(0);
 
@@ -476,7 +467,7 @@ void getLegoPosition(void) {
 	cvReleaseImage( &gsFrame );
 	cvReleaseImage( &finalFrame );
 	
-	// possibly destroy windows here
+	// destroy windows here
 	//if (showwindows == 1) {
 		//cvDestroyWindow( "Capture" );
 		//cvDestroyWindow( "Result" );
