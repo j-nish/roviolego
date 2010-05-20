@@ -26,6 +26,7 @@ import Rovio
 
 rovioBot=0
 
+
 def sendHeadCommand(data):
     global rovioBot
     rospy.loginfo('%i',data.data)
@@ -41,31 +42,28 @@ def sendHeadCommand(data):
 
 def sendCommand(data):
     global rovioBot
-    speed=20
     x=data.linear.x
     y=data.linear.y
+    z=data.linear.z
     theta=data.angular.z
     try:
-        if(theta>0):
-            rovioBot.rotate_left(5)
+        if(z!=0):
+            if(z>0):
+                rovioBot.rotate_left(5,z)
+            else:
+                rovioBot.rotate_right(5,-z)
+        elif(theta>0):
+            rovioBot.rotate_left(theta)
         elif(theta<0):
-            rovioBot.rotate_right(5)
-        elif(x>0 and y>0):
-            rovioBot.forward_left(speed)
-        elif(x>0 and y<0):
-            rovioBot.forward_right(speed)
-        elif(x<0 and y>0):
-            rovioBot.back_left(speed)
-        elif(x<0 and y<0):
-            rovioBot.back_right(speed)
+            rovioBot.rotate_right(-theta)
         elif(x>0):
-            rovioBot.forward(20)
+            rovioBot.forward(x)
         elif(x<0):
-            rovioBot.backward(20)
+            rovioBot.backward(-x)
         elif(y>0):
-            rovioBot.left(10)
+            rovioBot.left(y)
         elif(y<0):
-            rovioBot.right(10)
+            rovioBot.right(-y)
         else:
             rovioBot.stop()
     except:
@@ -84,6 +82,7 @@ def hex2dec(s):
 #controller method
 def controller():
     VxP = 0
+    omegaP = 0
     global rovioBot
     #the callbacks earlier in the file will asynchronously update
     rospy.init_node('rovio')
@@ -107,7 +106,6 @@ def controller():
 
     #this allows us to publish commands for the robot
     if getPos or getVel:
-
         pubOdom=rospy.Publisher('base_pose_ground_truth',Odometry)
     if getVel:
         pubIR=rospy.Publisher('infrared',Bool)
@@ -137,72 +135,67 @@ def controller():
         odom=Odometry()
         header=Header(seq=count,stamp=rospy.get_rostime(),frame_id=rospy.get_caller_id())
         count=count+1
-        try:
-            if getPos:
+        if getPos:
+            try:
                 report=rovioBot.get_report()
                 x=float(report['x'])/100.
                 y=float(report['y'])/100.
                 yaw=float(report['theta'])
                 #odom.pose.pose=Pose(position=Point(x,y,0),orientation=CreateFromYaw(yaw))
                 odom.pose.pose=Pose(position=Point(x,y,0),orientation=Quaternion(0,0,yaw,0))
-                
-                #if getYaw:
-	            #    pubYaw.publish(Vector3(0,0,yaw))
 
-            if getVel:
-                report=rovioBot.get_MCU_report()
-                ind = 0
-                packetLen = hex2dec(report[0:2])
-                #left wheel:
-                lw_dir = hex2dec(report[4:6])
-                lw_count = hex2dec(report[6:10])
-                #right wheel:
-                rw_dir = hex2dec(report[10:12])
-                rw_count = hex2dec(report[12:16])
-                #centre wheel
-                cw_dir = hex2dec(report[16:18])
-                cw_count = hex2dec(report[18:22])
-                V_l = -1.0*lw_count if (lw_dir & 4) else lw_count
-                V_r = -1.0*rw_count if (rw_dir & 4) else rw_count
-                V_c = -1.0*cw_count if (cw_dir & 4) else cw_count
-                front_factor_avg = 0.0
-                front_factor_count = 0.0
-                # 20 degrees
-                phi = 0.34907
-                Lf = 0.74
-                Lb = 1.0 - Lf;
-                #375 encoder ticks per meter forwards
-                Wx = 375
-                #encoder ticks per meter sideways?
-                Wy = 140
-                #205 encoder ticks per radian of rotation?
-                Wt = 205
-                Vx = (-V_l + -V_r)/2*math.cos(phi)/Wx;
-                front_vel = (V_l - V_r)/2.0 * math.sin(phi)*Lf;
-                rear_vel = (V_c * Lb);
-                Vy = (front_vel - rear_vel)/Wy;
-                omega = (-V_r + V_l + V_c) / Wt;
-                Vx = Vx + VxP;
-                VxP = Vx
-                odom.twist.twist=Twist(linear=Vector3(x=Vx,y=Vy,z=0),angular=Vector3(x=0,y=0,z=omega))
-                pubIR.publish(Bool((hex2dec(report[28:30])&4)==4))
-                
+                if getVel:
+		        report=rovioBot.get_MCU_report()
+		        ind = 0
+		        packetLen = hex2dec(report[0:2])
+		        #left wheel:
+		        lw_dir = hex2dec(report[4:6])
+		        lw_count = hex2dec(report[6:10])
+		        #right wheel:
+		        rw_dir = hex2dec(report[10:12])
+		        rw_count = hex2dec(report[12:16])
+		        #centre wheel
+		        cw_dir = hex2dec(report[16:18])
+		        cw_count = hex2dec(report[18:22])
+		        V_l = -1.0*lw_count if (lw_dir & 4) else lw_count
+		        V_r = -1.0*rw_count if (rw_dir & 4) else rw_count
+		        V_c = -1.0*cw_count if (cw_dir & 4) else cw_count
+		        # 20 degrees
+		        phi = 0.34907
+		        Lf = 0.74
+		        Lb = 1.0 - Lf;
+		        #375 encoder ticks per meter forwards
+		        Wx = 375
+		        #encoder ticks per meter sideways?
+		        Wy = 140
+		        #205 encoder ticks per radian of rotation?
+		        Wt = 205
+		        Vx = (-V_l + -V_r)/Wx;
+		        front_vel = (V_l - V_r)/2.0 * math.sin(phi)*Lf;
+		        rear_vel = (V_c * Lb);
+		        Vy = (front_vel - rear_vel)/Wy;
+		        omega = (-V_r + V_l + V_c) / Wt;
+		        Vx = Vx + VxP
+		        omega = omega + omegaP
+		        VxP = Vx
+		        omegaP = omega
+                        odom.twist.twist=Twist(linear=Vector3(x=Vx,y=Vx,z=0),angular=Vector3(x=0,y=0,z=omega))
             #rospy.loginfo('x=%f y=%f theta=%f Vx=%f Vy=%f omega=%f',x,y,yaw,Vx,Vy,omega)
-            if getPos or getVel:
-                odom.header=header
-                pubOdom.publish(odom)
-        except:
-            rospy.loginfo('url timeout')
+                if getPos or getVel:
+                    odom.header=header
+                    pubOdom.publish(odom)
+            except:
+                rospy.loginfo('url timeout')
             
 
         if getImage:
             header.stamp=rospy.get_rostime()
             try:
                 jpeg_data = rovioBot.get_image()
-                f = file('tmp.jpg', 'wb')
+                f = file('/home/crazyjoe/Desktop/rovio/tmp.jpg', 'wb')
                 f.write(jpeg_data)
                 f.close()
-                im = cv.LoadImage("tmp.jpg", 1)
+                im = cv.LoadImage("/home/crazyjoe/Desktop/rovio/tmp.jpg", 1)
                 rosImg=cvb.cv_to_imgmsg(im)
                 rosImg.header=header
                 pubImage.publish(rosImg)
