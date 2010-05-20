@@ -56,13 +56,16 @@ double x[3][1] = {{0.0},{0.0},{0.0}};
 
 double result[3][3],tmpArray[3][3],tmpArray1[3][3],tmpArray2[3][3];
 double resultRow[3][1],tmpRow[3][1],tmpRow1[3][1],tmpRow2[3][1],xP[3][1],wA,legoX,legoY,legoA;
+double legoXL1 = 0;
 double legoYL1 = 0;
 double legoYL2 = 0;
-double angles[10] = {0,0,0,0,0,0,0,0,0,0};
+double legoYL3 = 0;
+double angles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 int countA = 0;
+int odomGet = 0;
 
-double cmds[10]; //list of command values to take
-int cmdTypes[10];//list of what type of command to take(move straight, rotate, or reset vision)
+double cmds[20]; //list of command values to take
+int cmdTypes[20];//list of what type of command to take(move straight, rotate, or reset vision)
 int numCmds;     //number of commands that are queued  
 double VxLast,wLast,xI,yI,wI,xB,yB,wB;
 
@@ -104,7 +107,7 @@ void getLego(){
   getLegoPosition();
   legoX = legoPos[0];
   legoY = legoPos[1];
-  legoA = atan2(legoY,legoX)-PI/2.0;      
+  legoA = atan2(legoY,legoX)-PI/2.0; 
   ROS_INFO("Lego: x=%f, y=%f, a=%f", legoX,legoY,legoA);
 }
 
@@ -303,6 +306,7 @@ void resetLastPos()
 
 //callback to store 0dometry data
 void recordOdom(const nav_msgs::Odometry::ConstPtr& data){
+    odomGet = 1;
     xI = data->pose.pose.position.x;
     yI = data->pose.pose.position.y;
     wI = data->pose.pose.orientation.z;
@@ -334,9 +338,6 @@ void moveToLego()
     numCmds++;
     cmdTypes[numCmds-1] = 2;
     cmds[numCmds-1] = 0;  
-  }else{
-    numCmds++;
-    cmdTypes[numCmds-1] = 4;
   }
 }
 
@@ -356,7 +357,7 @@ void backup()
 {
   numCmds++;
   cmdTypes[numCmds-1] = 0;
-  cmds[numCmds-1] = -25;
+  cmds[numCmds-1] = -45;
 }
 
 void rotate(double a)
@@ -411,7 +412,26 @@ int main(int argc, char** argv)
   {
     angles[countA%10] = wI;
     avgAngle();
-    getLego();
+    
+    if(odomGet==0){
+      numCmds++;
+      cmdTypes[numCmds-1] = 234535;
+    }else{
+      getLego();
+      if(legoYL1==legoY&&legoY>0.0){
+        numCmds++;
+        cmdTypes[numCmds-1] = 234535;
+        legoY = legoYL1;
+        legoX = legoXL1;
+      }else{
+        legoXL1 = legoX;
+        legoYL3 = legoYL2;
+        legoYL2 = legoYL1;
+        legoYL1 = legoY;
+      }
+    }
+    odomGet = 0;
+
     countA++;
     resetEnc();
     updateKalman();
@@ -421,8 +441,8 @@ int main(int argc, char** argv)
     angle= wI;
 
     //print the location and reset cmds
-    ROS_INFO("Bot at x=%f y=%f z=%f,angleWant=%f",x[0][0],x[1][0],x[2][0],cmds[numCmds-1]);
-    ROS_INFO("Ovr at x=%f y=%f z=%f dist=%f,angle=%f",xI,yI,wI,dist,angle);
+    //ROS_INFO("Bot at x=%f y=%f z=%f,angleWant=%f",x[0][0],x[1][0],x[2][0],cmds[numCmds-1]);
+    //ROS_INFO("Ovr at x=%f y=%f z=%f dist=%f,angle=%f",xI,yI,wI,dist,angle);
     geometry_msgs::Twist cmd;
     cmd.linear.x=0;
     cmd.linear.y=0;
@@ -431,6 +451,8 @@ int main(int argc, char** argv)
 
 
     if(numCmds == 0){
+      numCmds++;
+      cmdTypes[numCmds-1] = 234535;
       numCmds++;
       cmdTypes[numCmds-1] = 4;
       if(legoY>0){
@@ -452,12 +474,14 @@ int main(int argc, char** argv)
      cmdTypes[numCmds-1] = 2345;
     */
     } 
-
     //If there are no commands to take, end.
     if (numCmds <= 0){
       done = 1;
     }
 
+
+
+    ROS_INFO("Phase: %d",cmdTypes[numCmds-1]);
 
     //cmdTypes[1] = 1;
     //cmds[1]     = PI*((double)(rand()%10-5))/5;
@@ -516,34 +540,42 @@ int main(int argc, char** argv)
         }else if(cmds[numCmds-1] < - PI){
             cmds[numCmds-1] += 2.0*PI;
         }
+        if(legoY>7){
         if(legoA>0){
-            if(legoA<thresh/2.0){
+            if(legoA<thresh/1.2){
 
             }else{
-                cmd.linear.y = -3;
+                if(legoY>12){
+                  cmd.linear.y = -3;
+                }else{
+                  cmd.linear.y = 3;
+                }
             }
         }else{
-            if(legoA > -thresh/2.0){
+            if(legoA > -thresh/1.2){
 
-            }else{
-                cmd.linear.y =  3;
+            }else{         
+               if(legoY>12){
+                 cmd.linear.y = 3;
+               }else{
+                 cmd.linear.y = -3;
+               }
             } 
+        }
         }
         if (legoY > 8){
           if(cmd.linear.y==0){
             cmd.linear.x = 5;
           }else{
-            numCmds++;
-            cmdTypes[numCmds-1] = 12784;
+
           }
-        }else if(legoYL1>0 || legoYL2>0){
+        }else if(legoY<=9 && legoYL1<=0 && legoYL2<=0){
           numCmds--;
           resetLastPos();
           backup();
           goToZero();
         }else{
-          numCmds--;
-          resetLastPos();
+          
         }  
     }else if(cmdTypes[numCmds-1] == 3){//rotate around to point at origin
       if (tmpBool==0){
@@ -580,7 +612,7 @@ int main(int argc, char** argv)
        resetLastPos();
     }else if (cmdTypes[numCmds-1] == 5){ //go distance to zero-zero
         if (tmpBool==0){
-          cmds[numCmds-1] = sqrt(x[0][0]*x[0][0]+x[1][0]*x[1][0])/1.5;
+          cmds[numCmds-1] = sqrt(xI*xI+yI*yI)/1.2;
           if (cmds[numCmds-1] > 50){
           cmds[numCmds-1] = 50.0;
           }
@@ -592,9 +624,9 @@ int main(int argc, char** argv)
                 resetLastPos();
                 tmpBool = 0;
             }else{ //otherwise keep going
-                cmd.linear.x = 5;
+                cmd.linear.x = 2;
             }
-        }else{
+        }else{//else end
            numCmds--;
            resetLastPos();
            tmpBool = 0;
